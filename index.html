@@ -190,7 +190,7 @@
   }
 
   /* ===== 密码验证 ===== */
-  #passwordOverlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(45,52,54,.6); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  #passwordOverlay { display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(45,52,54,.6); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   #passwordOverlay.show { display: flex; }
   .password-box { background: #fff; border-radius: 24px; padding: 40px 32px; width: 88%; max-width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
   .password-box h2 { font-size: 24px; margin-bottom: 4px; background: linear-gradient(135deg, #7ec8e3, #89d4b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -1396,8 +1396,9 @@ function checkAuth() {
 }
 
 function showPasswordOverlay() {
-  if (!checkAuth()) {
-    document.getElementById("passwordOverlay").classList.add("show");
+  if (checkAuth()) {
+    document.getElementById("passwordOverlay").style.display = "none";
+  } else {
     document.getElementById("passwordInput").focus();
   }
 }
@@ -1406,7 +1407,7 @@ function checkPassword() {
   const input = document.getElementById("passwordInput").value;
   if (input === SITE_PASSWORD) {
     localStorage.setItem(AUTH_KEY, JSON.stringify({ authed: true, time: Date.now() }));
-    document.getElementById("passwordOverlay").classList.remove("show");
+    document.getElementById("passwordOverlay").style.display = "none";
   } else {
     document.getElementById("passwordError").style.display = "block";
   }
