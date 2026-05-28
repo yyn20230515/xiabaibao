@@ -850,6 +850,7 @@ function showNoteDetail(id) {
   const idx = findNoteIdx(id);
   if (idx === -1) { renderNotes(); return; }
   const n = _cache.notes[idx];
+  const a = n.archived;
   const html = `<div class="card detail-card">
       <div class="detail-header">
         <button class="detail-back" onclick="renderNotes()">← 返回</button>
