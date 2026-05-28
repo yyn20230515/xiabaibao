@@ -112,9 +112,32 @@
   .detail-card .detail-content:focus { border-color: #d4eae3; background: #f8fcfb; }
   .detail-card .detail-meta { font-size: 12px; color: #a0b8b0; margin-bottom: 10px; }
   }
+
+  /* ===== 密码验证 ===== */
+  #passwordOverlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(45,52,54,.6); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  #passwordOverlay.show { display: flex; }
+  .password-box { background: #fff; border-radius: 24px; padding: 40px 32px; width: 88%; max-width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+  .password-box h2 { font-size: 24px; margin-bottom: 4px; background: linear-gradient(135deg, #7ec8e3, #89d4b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .password-box p { font-size: 14px; color: #a0b8b0; margin-bottom: 20px; }
+  .password-box input { width: 100%; padding: 12px 16px; border: 2px solid #d4eae3; border-radius: 14px; font-size: 16px; font-family: inherit; text-align: center; outline: none; transition: border-color .2s; }
+  .password-box input:focus { border-color: #89d4b6; box-shadow: 0 0 0 3px rgba(137,212,182,.15); }
+  .password-box .pw-btn { width: 100%; padding: 12px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; margin-top: 12px; background: linear-gradient(135deg, #b8e1f5, #a8e6cf); color: #3d5a5c; transition: all .2s; }
+  .password-box .pw-btn:active { transform: scale(.97); }
+  #passwordError { color: #ff5252; font-size: 13px; margin-top: 8px; display: none; }
+
 </style>
 </head>
 <body>
+<div id="passwordOverlay">
+  <div class="password-box">
+    <h2>🦐 虾虾百宝箱</h2>
+    <p>请输入密码</p>
+    <input type="password" id="passwordInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="pw-btn" onclick="checkPassword()">✨ 进入</button>
+    <div id="passwordError">密码错误，再试一次～</div>
+  </div>
+</div>
+
 
 <!-- ==================== 主页 ==================== -->
 <div id="page-home" class="page active">
@@ -1268,6 +1291,43 @@ function getToday() { return new Date().toISOString().slice(0,10); }
 function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ==================== 启动 ====================
+
+// ===== 密码验证 =====
+const SITE_PASSWORD = "xiaoxia";
+const AUTH_KEY = "xiabaibao_auth";
+const AUTH_DURATION = 24 * 60 * 60 * 1000;
+
+function checkAuth() {
+  try {
+    const auth = localStorage.getItem(AUTH_KEY);
+    if (auth) {
+      const data = JSON.parse(auth);
+      if (data.authed && (Date.now() - data.time) < AUTH_DURATION) return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function showPasswordOverlay() {
+  if (!checkAuth()) {
+    document.getElementById("passwordOverlay").classList.add("show");
+    document.getElementById("passwordInput").focus();
+  }
+}
+
+function checkPassword() {
+  const input = document.getElementById("passwordInput").value;
+  if (input === SITE_PASSWORD) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ authed: true, time: Date.now() }));
+    document.getElementById("passwordOverlay").classList.remove("show");
+  } else {
+    document.getElementById("passwordError").style.display = "block";
+  }
+}
+
+// 页面加载时检查密码
+showPasswordOverlay();
+
 loadAllData();
 </script>
 <div style="text-align:center;padding:20px 0;font-size:12px;color:#ccc"><a href="/" style="color:#aabfbb;text-decoration:none">📱 手机版 · <span style="color:#89d4b6">🖥️ 电脑版</span></a></div>
