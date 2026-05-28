@@ -435,8 +435,8 @@ function goPage(name, extra) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 0, daily: 1, schedule: 2, countdown: 3, idea: 4, note: 5, study: 1 };
-  document.querySelectorAll('.bottom-nav button')[navMap[name] || 0].classList.add('active');
+  const navMap = { home: 0, schedule: 1, countdown: 2 };
+  const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && nb[ni]) nb[ni].classList.add('active');
   document.querySelectorAll('.desktop-nav-links a').forEach(a => a.classList.remove('active'));
   const dLink = document.querySelector(`.desktop-nav-links a[onclick*="'${name}'"]`);
   if (dLink) dLink.classList.add('active');
