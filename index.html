@@ -142,6 +142,23 @@
     
     .home-summary-card { cursor: default; }
   
+
+  /* ===== 手机端卡片优化 ===== */
+  @media (max-width: 480px) {
+    .item-card { padding: 10px 12px; border-radius: 12px; }
+    .item-card h4 { font-size: 14px; }
+    .item-card .meta { font-size: 11px; gap: 4px; }
+    .item-card .preview { font-size: 12px; }
+    .item-card .meta .tag { font-size: 10px; padding: 1px 8px; }
+    .detail-card .detail-title { font-size: 16px; }
+    .detail-card .detail-meta { font-size: 11px; }
+    .detail-card .detail-content { font-size: 13px; }
+    .detail-header .detail-back { font-size: 13px; }
+    .detail-header .detail-delete { font-size: 12px; }
+    .card { padding: 14px; }
+    .item-grid { gap: 6px; }
+  }
+
   /* ===== 归档笔记 ===== */
   .item-card.archived { opacity: .5; filter: grayscale(.6); pointer-events: none; }
   .item-card.archived .archived-label { display: inline-block; font-size: 10px; background: #d4d4d4; color: #888; padding: 1px 8px; border-radius: 8px; margin-left: 6px; }
