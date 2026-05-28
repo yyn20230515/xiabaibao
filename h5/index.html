@@ -1255,7 +1255,7 @@ function toggleDailySelect(id) {
 }
 
 async function confirmDailyDelete() {
-  if (_dailySelected.size === 0) { alert("请选择要删除的记录"); return; }
+  if (_dailySelected.size === 0) { toggleDailyDelete(); return; }
   if (!confirm("确定删除选中的 " + _dailySelected.size + " 条记录？")) return;
   for (const id of _dailySelected) {
     await sb.from('dailylog').delete().eq('id', id);
