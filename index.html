@@ -141,6 +141,19 @@
     .checkin-btn { padding: 16px; font-size: 18px; }
     
     .home-summary-card { cursor: default; }
+  
+  /* ===== 详情卡片 ===== */
+  .detail-card { position: relative; }
+  .detail-card .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .detail-card .detail-back { border: none; background: none; font-family: inherit; font-size: 14px; color: #89d4b6; cursor: pointer; font-weight: 600; padding: 4px 0; }
+  .detail-card .detail-back:hover { color: #6ac4a0; }
+  .detail-card .detail-delete { border: none; background: none; font-family: inherit; font-size: 13px; color: #ff9eaa; cursor: pointer; padding: 4px 0; font-weight: 600; }
+  .detail-card .detail-delete:hover { color: #ff5252; }
+  .detail-card .detail-title { font-size: 18px; font-weight: 700; color: #3d5a5c; margin-bottom: 6px; outline: none; border-bottom: 2px solid transparent; transition: border-color .2s; padding: 4px 0; border-radius: 0; }
+  .detail-card .detail-title:focus { border-bottom-color: #89d4b6; }
+  .detail-card .detail-content { font-size: 14px; line-height: 1.6; color: #2d3436; white-space: pre-wrap; outline: none; border: 1px solid transparent; border-radius: 8px; padding: 8px; margin: 0 -8px; min-height: 40px; transition: border-color .2s, background .2s; }
+  .detail-card .detail-content:focus { border-color: #d4eae3; background: #f8fcfb; }
+  .detail-card .detail-meta { font-size: 12px; color: #a0b8b0; margin-bottom: 10px; }
   }
 </style>
 </head>
@@ -668,14 +681,26 @@ function showIdeaDetail(id) {
   const idx = findIdeaIdx(id);
   if (idx === -1) { renderIdeas(); return; }
   const item = _cache.ideas[idx];
-  const html = `<button class="back-btn" onclick="renderIdeas()">← 返回</button>
-    <div class="card">
-      <h3>${esc(item.title)}</h3>
-      <div class="meta" style="margin:6px 0">${(item.tags||[]).map(t => '<span class="tag">#' + esc(t) + '</span>').join('')} · ${item.date||''}</div>
-      <p style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(item.content||'')}</p>
-    </div>
-    <button class="btn btn-danger btn-sm" onclick="if(confirm('删除此灵感？')){ deleteIdea(${item.id}) }" style="width:100%">🗑️ 删除</button>`;
+  const html = `<div class="card detail-card">
+      <div class="detail-header">
+        <button class="detail-back" onclick="renderIdeas()">← 返回</button>
+        <button class="detail-delete" onclick="if(confirm('删除此灵感？')){ deleteIdea(${item.id}) }">🗑️ 删除</button>
+      </div>
+      <div class="detail-title" contenteditable="true" onblur="updateIdeaField(${item.id},'title',this.innerText)">${esc(item.title)}</div>
+      <div class="detail-meta">${(item.tags||[]).map(t => '<span class="tag">#' + esc(t) + '</span>').join('')} · ${item.date||''}</div>
+      <div class="detail-content" contenteditable="true" onblur="updateIdeaField(${item.id},'content',this.innerText)">${esc(item.content||'')}</div>
+    </div>`;
   document.getElementById('ideaList').innerHTML = html;
+}
+
+async function updateIdeaField(id, field, value) {
+  const idx = findIdeaIdx(id);
+  if (idx === -1) return;
+  const update = {};
+  update[field] = value.trim();
+  if (update[field] === _cache.ideas[idx][field]) return;
+  await sb.from('ideas').update(update).eq('id', id);
+  _cache.ideas[idx][field] = update[field];
 }
 
 async function deleteIdea(id) {
@@ -751,14 +776,26 @@ function showNoteDetail(id) {
   const idx = findNoteIdx(id);
   if (idx === -1) { renderNotes(); return; }
   const n = _cache.notes[idx];
-  const html = `<button class="back-btn" onclick="renderNotes()">← 返回</button>
-    <div class="card">
-      <h3>${n.star ? '⭐ ' : ''}${esc(n.title)}</h3>
-      <div class="meta" style="margin:6px 0">${(n.tags||[]).map(t => '<span class="tag">#' + esc(t) + '</span>').join('')} · ${n.date||''}</div>
-      <p style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(n.content||'')}</p>
-    </div>
-    <button class="btn btn-danger btn-sm" onclick="if(confirm('删除此笔记？')){ deleteNote(${n.id}) }" style="width:100%">🗑️ 删除</button>`;
+  const html = `<div class="card detail-card">
+      <div class="detail-header">
+        <button class="detail-back" onclick="renderNotes()">← 返回</button>
+        <button class="detail-delete" onclick="if(confirm('删除此笔记？')){ deleteNote(${n.id}) }">🗑️ 删除</button>
+      </div>
+      <div class="detail-title" contenteditable="true" onblur="updateNoteField(${n.id},'title',this.innerText)">${n.star ? '⭐ ' : ''}${esc(n.title)}</div>
+      <div class="detail-meta">${(n.tags||[]).map(t => '<span class="tag">#' + esc(t) + '</span>').join('')} · ${n.date||''}</div>
+      <div class="detail-content" contenteditable="true" onblur="updateNoteField(${n.id},'content',this.innerText)">${esc(n.content||'')}</div>
+    </div>`;
   document.getElementById('noteList').innerHTML = html;
+}
+
+async function updateNoteField(id, field, value) {
+  const idx = findNoteIdx(id);
+  if (idx === -1) return;
+  const update = {};
+  update[field] = value.trim().replace(/^⭐ /, '');
+  if (update[field] === _cache.notes[idx][field]) return;
+  await sb.from('notes').update(update).eq('id', id);
+  _cache.notes[idx][field] = update[field];
 }
 
 async function deleteNote(id) {
@@ -879,13 +916,16 @@ function showCdDetail(id) {
   const item = _cache.countdowns[idx];
   const days = getCdDays(item);
   const label = getCdLabel(days);
-  let html = `<button class="back-btn" onclick="renderCountdowns()">← 返回</button>`;
-  html += `<div class="card">
-    <h3>${item.done ? '✅ ' : ''}${esc(item.title)}</h3>
-    <div class="meta" style="margin:6px 0">
-      📅 ${item.target_date} ${item.target_time || ''}
-      ${(item.tags||[]).length ? item.tags.map(t => '<span class="tag">#' + esc(t) + '</span>').join('') : ''}
-    </div>`;
+  let html = `<div class="card detail-card">
+      <div class="detail-header">
+        <button class="detail-back" onclick="renderCountdowns()">← 返回</button>
+        <button class="detail-delete" onclick="if(confirm('删除此倒计时？')){ deleteCd(${item.id}) }">🗑️ 删除</button>
+      </div>
+      <div class="detail-title" contenteditable="true" onblur="updateCdField(${item.id},'title',this.innerText)">${item.done ? '✅ ' : ''}${esc(item.title)}</div>
+      <div class="detail-meta" style="margin-bottom:10px">
+        📅 ${item.target_date} ${item.target_time || ''}
+        ${(item.tags||[]).length ? item.tags.map(t => '<span class="tag">#' + esc(t) + '</span>').join('') : ''}
+      </div>`;
   if (!item.done) {
     html += `<div style="text-align:center;padding:16px 0">
       <span style="font-size:36px;font-weight:700;color:${label.color}">${days < 0 ? '逾期' + Math.abs(days) + '天' : days + '天'}</span><br>
@@ -894,18 +934,27 @@ function showCdDetail(id) {
   } else {
     html += `<div style="text-align:center;padding:16px 0;color:#4caf50;font-size:18px">🎉 已完成！</div>`;
   }
-  if (item.description) html += `<p style="font-size:14px;color:#666;white-space:pre-wrap">${esc(item.description)}</p>`;
+  if (item.description !== undefined) {
+    html += `<div class="detail-content" contenteditable="true" onblur="updateCdField(${item.id},'description',this.innerText)">${esc(item.description||'')}</div>`;
+  }
   html += `</div>`;
   if (!item.done) {
     html += `<button class="checkin-btn pending" onclick="doCdDone(${item.id})" style="margin:8px 0">✅ 标记为已完成</button>`;
   } else {
     html += `<button class="checkin-btn done" onclick="doCdUndo(${item.id})" style="margin:8px 0">↩️ 撤销完成</button>`;
   }
-  html += `<button class="btn btn-danger btn-sm" onclick="if(confirm('删除此倒计时？')){ deleteCd(${item.id}) }" style="width:100%">🗑️ 删除</button>`;
   document.getElementById('countdownList').innerHTML = html;
 }
 
-async function doCdDone(id) {
+async function updateCdField(id, field, value) {
+  const idx = findCdIdx(id);
+  if (idx === -1) return;
+  const update = {};
+  update[field] = value.trim();
+  if (update[field] === _cache.countdowns[idx][field]) return;
+  await sb.from('countdowns').update(update).eq('id', id);
+  _cache.countdowns[idx][field] = update[field];
+}function doCdDone(id) {
   await sb.from('countdowns').update({ done: true }).eq('id', id);
   const idx = findCdIdx(id);
   if (idx !== -1) _cache.countdowns[idx].done = true;
