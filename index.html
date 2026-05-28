@@ -954,7 +954,7 @@ async function updateCdField(id, field, value) {
   if (update[field] === _cache.countdowns[idx][field]) return;
   await sb.from('countdowns').update(update).eq('id', id);
   _cache.countdowns[idx][field] = update[field];
-}function doCdDone(id) {
+}async function doCdDone(id) {
   await sb.from('countdowns').update({ done: true }).eq('id', id);
   const idx = findCdIdx(id);
   if (idx !== -1) _cache.countdowns[idx].done = true;
