@@ -479,7 +479,7 @@ async function syncTag(module, name) {
 }
 
 // ==================== 导航 ====================
-function goPage(name, extra) {
+async function goPage(name, extra) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
@@ -490,10 +490,10 @@ function goPage(name, extra) {
   if (dLink) dLink.classList.add('active');
   if (name === 'home') updateHome();
   if (name === 'study') renderStudy();
-  if (name === 'schedule') renderSchedules();
-  if (name === 'countdown') { renderCountdowns(); if (extra) setTimeout(() => showCdDetail(extra), 150); }
-  if (name === 'idea') { renderIdeaTags(); renderIdeas(); }
-  if (name === 'note') { renderNoteTags(); renderNotes(); }
+  if (name === 'schedule') { try { const { data } = await sb.from('schedules').select('*').order('id'); _cache.schedules = data || []; } catch(e) {} renderSchedules(); }
+  if (name === 'countdown') { try { const { data } = await sb.from('countdowns').select('*').order('id', { ascending: false }); _cache.countdowns = data || []; } catch(e) {} renderCountdowns(); if (extra) setTimeout(() => showCdDetail(extra), 150); }
+  if (name === 'idea') { try { const { data } = await sb.from('ideas').select('*').order('id', { ascending: false }); _cache.ideas = data || []; } catch(e) {} renderIdeaTags(); renderIdeas(); }
+  if (name === 'note') { try { const { data } = await sb.from('notes').select('*').order('id', { ascending: false }); _cache.notes = data || []; _cache.noteTags = [...new Set((data||[]).flatMap(n => n.tags||[]))]; } catch(e) {} renderNoteTags(); renderNotes(); }
   if (name === 'daily') { loadDailyLogs(); }
 }
 
