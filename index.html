@@ -253,7 +253,7 @@
   <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
     <h2>📋 日常记录</h2>
-    <button class="btn btn-primary btn-sm" onclick="showDailyForm()">➕ 记录</button>
+    <button class="btn btn-danger btn-sm" id="dailyDeleteBtn" onclick="toggleDailyDelete()" style="background:#ffe8ec;color:#d4707a;margin-right:6px">➖ 删除</button><button class="btn btn-primary btn-sm" id="dailyAddBtn" onclick="showDailyForm()">➕ 记录</button>
   </div>
   <div id="dailyDate" style="font-size:13px;color:#a0b8b0;margin-bottom:8px"></div>
   <div id="dailyList" class="item-grid"></div>
@@ -778,7 +778,7 @@ function renderNotes() {
   const sorted = [...filtered].sort((a,b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
   el.innerHTML = sorted.map(n => {
     return `<div class="item-card ${n.archived ? 'archived' : ''}" ${!n.archived ? 'onclick="showNoteDetail(' + n.id + ')"' : ''}>
-      <div style="display:flex;justify-content:space-between;align-items:start">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <h4>${n.star ? '⭐ ' : ''}${esc(n.title)}${n.archived ? '<span class="archived-label">已归档</span>' : ''}</h4>
         ${!n.archived ? '<button class="archive-btn" onclick="event.stopPropagation();archiveNote(' + n.id + ')" title="标记为过时">📦 过时</button>' : '<button class="archive-btn" onclick="event.stopPropagation();unarchiveNote(' + n.id + ')" title="恢复">↩️ 重启</button>'}
       </div>
@@ -878,18 +878,19 @@ function renderDailyLogs() {
     el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>今天还没有记录～和阿夏一起做点什么吧！</p></div>';
     return;
   }
-  el.innerHTML = _dailyCache.map((item, i) => {
+  el.innerHTML = _dailyCache.map((item) => {
     const isAxia = item.source === 'axia';
+    const checked = _dailySelected.has(item.id) ? 'checked' : '';
     return `<div class="item-card" style="border-left:3px solid ${isAxia ? '#b8e1f5' : '#a8e6cf'}">
-      <div style="display:flex;justify-content:space-between;align-items:start">
-        <div style="flex:1">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+        <div style="flex:1;min-width:0">
           <div class="meta" style="margin-bottom:4px">
             <span>${item.time || ''}</span>
             <span class="tag" style="background:${isAxia ? '#e8f5f0' : '#fef3e2'};color:${isAxia ? '#3d7a5a' : '#b8860b'}">${isAxia ? '🦐 阿夏' : '👤 我'}</span>
           </div>
           <p style="font-size:14px;line-height:1.5;white-space:pre-wrap;color:#2d3436">${esc(item.content)}</p>
         </div>
-        <button onclick="deleteDailyLog(${item.id})" style="border:none;background:none;color:#ff9eaa;cursor:pointer;font-size:14px;padding:2px">✕</button>
+        ${_dailyDeleteMode ? `<input type="checkbox" ${checked} onchange="toggleDailySelect(${item.id})" style="width:18px;height:18px;accent-color:#89d4b6;flex-shrink:0;margin-top:2px">` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1308,6 +1309,46 @@ async function unarchiveNote(id) {
   await sb.from('notes').update({ archived: false }).eq('id', id);
   _cache.notes[idx].archived = false;
   renderNotes();
+}
+
+let _dailyDeleteMode = false;
+let _dailySelected = new Set();
+
+function toggleDailyDelete() {
+  _dailyDeleteMode = !_dailyDeleteMode;
+  _dailySelected.clear();
+  const delBtn = document.getElementById('dailyDeleteBtn');
+  const addBtn = document.getElementById('dailyAddBtn');
+  if (_dailyDeleteMode) {
+    delBtn.textContent = '✔ 确认';
+    delBtn.style.background = '#ff5252';
+    delBtn.style.color = '#fff';
+    delBtn.onclick = confirmDailyDelete;
+    addBtn.textContent = '✖ 取消';
+    addBtn.onclick = toggleDailyDelete;
+  } else {
+    delBtn.textContent = '➖ 删除';
+    delBtn.style.background = '#ffe8ec';
+    delBtn.style.color = '#d4707a';
+    addBtn.textContent = '➕ 记录';
+    addBtn.onclick = showDailyForm;
+  }
+  renderDailyLogs();
+}
+
+function toggleDailySelect(id) {
+  if (_dailySelected.has(id)) _dailySelected.delete(id);
+  else _dailySelected.add(id);
+}
+
+async function confirmDailyDelete() {
+  if (_dailySelected.size === 0) { alert("请选择要删除的记录"); return; }
+  if (!confirm("确定删除选中的 " + _dailySelected.size + " 条记录？")) return;
+  for (const id of _dailySelected) {
+    await sb.from('dailylog').delete().eq('id', id);
+  }
+  _dailyCache = _dailyCache.filter(item => !_dailySelected.has(item.id));
+  toggleDailyDelete();
 }
 // ==================== 工具 ====================
 function getToday() { return new Date().toISOString().slice(0,10); }
