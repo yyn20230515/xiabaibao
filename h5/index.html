@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +9,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { overflow-x: hidden; font-family: 'Nunito', 'KaiTi', 'STKaiti', '楷体', 'PingFang SC', sans-serif; background: #f0f8f5; min-height: 100vh; color: #2d3436; }
+  body { overflow-x: hidden; -webkit-text-size-adjust: 100%; font-family: 'Nunito', 'KaiTi', 'STKaiti', '楷体', 'PingFang SC', sans-serif; background: #f0f8f5; min-height: 100vh; color: #2d3436; }
   
   /* ===== 基础（手机端优先） ===== */
   .page { display: none; padding: 12px; max-width: 100%; margin: 0 auto; padding-bottom: 100px; }
@@ -28,7 +29,7 @@
   .badge-count { display: inline-block; background: #ff9eaa; color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 10px; margin-left: 4px; }
   
   /* ===== 桌面导航（手机隐藏） ===== */
-  /* .desktop-nav removed for mobile */
+  /* desktop-nav removed for mobile */
   
   /* ===== 底部导航 ===== */
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; border-top: 1px solid rgba(137,212,182,.25); padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
@@ -56,9 +57,9 @@
   .empty-state .icon { font-size: 48px; margin-bottom: 8px; }
   
   .item-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .item-card { overflow: hidden; background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 12px rgba(137,212,182,.1); cursor: pointer; transition: transform .15s, box-shadow .15s; border: 1px solid rgba(137,212,182,.08); }
+  .item-card { overflow: hidden; background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 12px rgba(137,212,182,.1); cursor: pointer; transition: transform .15s, box-shadow .15s; border: 1px solid rgba(137,212,182,.08); }
   .item-card:active { transform: scale(.98); }
-  .item-card h4 { font-size: 15px; margin-bottom: 4px; font-weight: 700; color: #2d3436; }
+  .item-card h4 { font-size: 14px; margin-bottom: 3px; font-weight: 700; color: #2d3436; }
   .item-card .meta { font-size: 12px; color: #a0b8b0; display: flex; gap: 8px; flex-wrap: wrap; }
   .item-card .preview { font-size: 13px; color: #6a9e92; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   
@@ -131,18 +132,7 @@
   </div>
 </div>
 
-  <div id="menuGrid" class="menu-grid">
-  </div>
-  <div style="margin-top:24px">
-    <div class="card" style="cursor:default">
-      <div class="card-title">📋 今日概况</div>
-      <div id="homeSummary" style="font-size:13px;color:#666">加载中…</div>
-    </div>
-  </div>
-</div>
-
-  </div>
-</div>
+<!-- ==================== 桌面端顶部导航（手机端隐藏） ==================== -->
 
 <!-- ==================== 日程页 ==================== -->
 <div id="page-schedule" class="page">
@@ -242,7 +232,7 @@
 </div>
 
 <!-- ==================== 底部导航 ==================== -->
-<div class="bottom-nav" style="padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);">
+<div class="bottom-nav">
   <button class="active" onclick="goPage('home')"><span class="nav-icon">🏠</span>主页</button>
   <button onclick="goPage('schedule')"><span class="nav-icon">📅</span>日程</button>
   <button onclick="goPage('countdown')"><span class="nav-icon">⏰</span>倒计时</button>
@@ -1239,6 +1229,6 @@ function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').repl
 // ==================== 启动 ====================
 loadAllData();
 </script>
-<div style="text-align:center;padding:16px 0;font-size:12px;color:#ccc"><a href="/" style="color:#aabfbb;text-decoration:none">📱 手机版 · <span style="color:#89d4b6">🖥️ 电脑版</span></a></div>
+<div style="text-align:center;padding:20px 0;font-size:12px;color:#ccc"><a href="/" style="color:#aabfbb;text-decoration:none">📱 手机版 · <span style="color:#89d4b6">🖥️ 电脑版</span></a></div>
 </body>
 </html>
