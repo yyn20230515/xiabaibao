@@ -446,7 +446,7 @@ function goPage(name, extra) {
   if (name === 'countdown') { renderCountdowns(); if (extra) setTimeout(() => showCdDetail(extra), 150); }
   if (name === 'idea') { renderIdeaTags(); renderIdeas(); }
   if (name === 'note') { renderNoteTags(); renderNotes(); }
-  if (name === 'daily') { renderDailyLogs(); }
+  if (name === 'daily') { loadDailyLogs(); }
 }
 
 async function loadMenuItems() {
