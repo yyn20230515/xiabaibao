@@ -800,7 +800,7 @@ function renderNotes() {
   if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>还没有笔记</p></div>'; return; }
   const sorted = [...filtered].sort((a,b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
   el.innerHTML = sorted.map(n => {
-    return `<div class="item-card ${n.archived ? 'archived' : ''}" ${!n.archived ? 'onclick="showNoteDetail(' + n.id + ')"' : ''}>
+    return `<div class="item-card ${n.archived ? 'archived' : ''}" onclick="showNoteDetail(${n.id})">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <h4>${n.star ? '⭐ ' : ''}${esc(n.title)}${n.archived ? '<span class="archived-label">已归档</span>' : ''}</h4>
         ${!n.archived ? '<button class="archive-btn" onclick="event.stopPropagation();archiveNote(' + n.id + ')" title="标记为过时">📦 过时</button>' : '<button class="archive-btn" onclick="event.stopPropagation();unarchiveNote(' + n.id + ')" title="恢复">↩️ 重启</button>'}
@@ -853,7 +853,7 @@ function showNoteDetail(id) {
   const html = `<div class="card detail-card">
       <div class="detail-header">
         <button class="detail-back" onclick="renderNotes()">← 返回</button>
-        <button class="detail-delete" onclick="if(confirm('删除此笔记？')){ deleteNote(${n.id}) }">🗑️ 删除</button>
+        ${a ? '' : '<button class="detail-delete" onclick="if(confirm(\'删除此笔记？\')){ deleteNote(' + n.id + ') }">🗑️ 删除</button>'}
       </div>
       <div class="detail-title" contenteditable="true" onblur="updateNoteField(${n.id},'title',this.innerText)">${n.star ? '⭐ ' : ''}${esc(n.title)}</div>
       <div class="detail-meta">${(n.tags||[]).map(t => '<span class="tag">#' + esc(t) + '</span>').join('')} · ${n.date||''}</div>
