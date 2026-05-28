@@ -249,6 +249,17 @@
   <div id="ideaList" class="item-grid"></div>
 </div>
 
+<!-- ==================== 日常记录页 ==================== -->
+<div id="page-daily" class="page">
+  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <h2>📋 日常记录</h2>
+    <button class="btn btn-primary btn-sm" onclick="showDailyForm()">➕ 记录</button>
+  </div>
+  <div id="dailyDate" style="font-size:13px;color:#a0b8b0;margin-bottom:8px"></div>
+  <div id="dailyList" class="item-grid"></div>
+</div>
+
 <!-- ==================== 笔记页 ==================== -->
 <div id="page-note" class="page">
   <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
@@ -311,6 +322,7 @@
 <!-- ==================== 底部导航 ==================== -->
 <div class="bottom-nav">
   <button class="active" onclick="goPage('home')"><span class="nav-icon">🏠</span>主页</button>
+  <button onclick="goPage('daily')"><span class="nav-icon">📋</span>日常</button>
   <button onclick="goPage('schedule')"><span class="nav-icon">📅</span>日程</button>
   <button onclick="goPage('countdown')"><span class="nav-icon">⏰</span>倒计时</button>
   <button onclick="goPage('idea')"><span class="nav-icon">💡</span>灵感</button>
@@ -363,6 +375,19 @@
     <div class="btn-row">
       <button class="btn btn-primary btn-sm" onclick="saveNote()">保存</button>
       <button class="btn btn-sm" onclick="closeOverlay('noteForm')" style="background:#eee">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 弹窗：日常记录表单 ==================== -->
+<div class="overlay" id="dailyForm">
+  <div class="overlay-box">
+    <h3>📋 记录今日</h3>
+    <label>内容</label><textarea id="df_content" rows="4" placeholder="写下今天做了什么…
+例如：和阿夏一起改进了百宝箱的笔记功能"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="saveDailyLog()">保存</button>
+      <button class="btn btn-sm" onclick="closeOverlay('dailyForm')" style="background:#eee">取消</button>
     </div>
   </div>
 </div>
@@ -438,7 +463,7 @@ function goPage(name, extra) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 0, schedule: 1, countdown: 2, idea: 3, note: 4, study: 1 };
+  const navMap = { home: 0, daily: 1, schedule: 2, countdown: 3, idea: 4, note: 5, study: 1 };
   document.querySelectorAll('.bottom-nav button')[navMap[name] || 0].classList.add('active');
   document.querySelectorAll('.desktop-nav-links a').forEach(a => a.classList.remove('active'));
   const dLink = document.querySelector(`.desktop-nav-links a[onclick*="'${name}'"]`);
@@ -449,6 +474,7 @@ function goPage(name, extra) {
   if (name === 'countdown') { renderCountdowns(); if (extra) setTimeout(() => showCdDetail(extra), 150); }
   if (name === 'idea') { renderIdeaTags(); renderIdeas(); }
   if (name === 'note') { renderNoteTags(); renderNotes(); }
+  if (name === 'daily') { renderDailyLogs(); }
 }
 
 function closeOverlay(id) { document.getElementById(id).classList.remove('show'); }
@@ -815,6 +841,84 @@ async function deleteNote(id) {
   const idx = findNoteIdx(id);
   if (idx !== -1) _cache.notes.splice(idx, 1);
   renderNotes();
+}
+
+// ==================== 日常记录模块 ====================
+let _dailyCache = [];
+
+async function loadDailyLogs(date) {
+  const d = date || getToday();
+  document.getElementById('dailyDate').textContent = '📅 ' + d;
+  try {
+    const { data } = await sb.from('dailylog').select('*').eq('date', d).order('created_at', { ascending: true });
+    _dailyCache = data || [];
+  } catch(e) {
+    console.error('加载日常记录失败', e);
+    _dailyCache = [];
+  }
+  renderDailyLogs();
+}
+
+function renderDailyLogs() {
+  const el = document.getElementById('dailyList');
+  if (!_dailyCache.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>今天还没有记录～和阿夏一起做点什么吧！</p></div>';
+    return;
+  }
+  el.innerHTML = _dailyCache.map((item, i) => {
+    const isAxia = item.source === 'axia';
+    return `<div class="item-card" style="border-left:3px solid ${isAxia ? '#b8e1f5' : '#a8e6cf'}">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div style="flex:1">
+          <div class="meta" style="margin-bottom:4px">
+            <span>${item.time || ''}</span>
+            <span class="tag" style="background:${isAxia ? '#e8f5f0' : '#fef3e2'};color:${isAxia ? '#3d7a5a' : '#b8860b'}">${isAxia ? '🦐 阿夏' : '👤 我'}</span>
+          </div>
+          <p style="font-size:14px;line-height:1.5;white-space:pre-wrap;color:#2d3436">${esc(item.content)}</p>
+        </div>
+        <button onclick="deleteDailyLog(${item.id})" style="border:none;background:none;color:#ff9eaa;cursor:pointer;font-size:14px;padding:2px">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDailyForm() {
+  document.getElementById('df_content').value = '';
+  document.getElementById('dailyForm').classList.add('show');
+}
+
+async function saveDailyLog() {
+  const content = document.getElementById('df_content').value.trim();
+  if (!content) { alert('请输入内容'); return; }
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const record = { date: getToday(), time: timeStr, content, source: 'user' };
+  const { data } = await sb.from('dailylog').insert(record).select();
+  if (data) { _dailyCache.push(data[0]); }
+  closeOverlay('dailyForm');
+  renderDailyLogs();
+}
+
+async function deleteDailyLog(id) {
+  if (!confirm('删除这条记录？')) return;
+  await sb.from('dailylog').delete().eq('id', id);
+  _dailyCache = _dailyCache.filter(item => item.id !== id);
+  renderDailyLogs();
+}
+
+// 阿夏专用：从后台添加日常记录
+async function addDailyFromAxia(content) {
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const record = { date: getToday(), time: timeStr, content, source: 'axia' };
+  const { data } = await sb.from('dailylog').insert(record).select();
+  if (data) {
+    if (getToday() === record.date) {
+      _dailyCache.push(data[0]);
+    }
+    return data[0];
+  }
+  return null;
 }
 
 // ==================== 倒计时模块 ====================
