@@ -145,7 +145,7 @@
 
   /* ===== 手机端卡片优化 ===== */
   @media (max-width: 480px) {
-    .item-card { width: 100%; max-width: 100%; box-sizing: border-box; }
+    .item-card { width: 100%; max-width: 100%; box-sizing: border-box; overflow-wrap: break-word; word-break: break-word; }
     .item-card .preview { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .item-card { padding: 10px 12px; border-radius: 12px; overflow: hidden; }
     .item-card h4 { font-size: 14px; }
@@ -772,7 +772,7 @@ function renderNotes() {
   if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>还没有笔记</p></div>'; return; }
   const sorted = [...filtered].sort((a,b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
   el.innerHTML = sorted.map(n => {
-    return `<div class="item-card ${n.archived ? 'archived' : ''}">
+    return `<div class="item-card ${n.archived ? 'archived' : ''}" ${!n.archived ? 'onclick="showNoteDetail(' + n.id + ')"' : ''}>
       <div style="display:flex;justify-content:space-between;align-items:start">
         <h4>${n.star ? '⭐ ' : ''}${esc(n.title)}${n.archived ? '<span class="archived-label">已归档</span>' : ''}</h4>
         ${!n.archived ? '<button class="archive-btn" onclick="event.stopPropagation();archiveNote(' + n.id + ')" title="标记为过时">📦 过时</button>' : '<button class="archive-btn" onclick="event.stopPropagation();unarchiveNote(' + n.id + ')" title="恢复">↩️ 重启</button>'}
