@@ -253,7 +253,7 @@
   <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
     <h2>📋 日常记录</h2>
-    <button class="btn btn-danger btn-sm" id="dailyDeleteBtn" onclick="toggleDailyDelete()" style="background:#ffe8ec;color:#d4707a;margin-right:6px">➖ 删除</button><button class="btn btn-primary btn-sm" id="dailyAddBtn" onclick="showDailyForm()">➕ 记录</button>
+    <span style="display:flex;gap:6px"><button class="btn btn-danger btn-sm" id="dailyDeleteBtn" onclick="toggleDailyDelete()" style="background:#ffe8ec;color:#d4707a;margin-right:6px">➖ 删除</button><button class="btn btn-primary btn-sm" id="dailyAddBtn" onclick="showDailyForm()">➕ 记录</button></span>
   </div>
   <div id="dailyDate" style="font-size:13px;color:#a0b8b0;margin-bottom:8px"></div>
   <div id="dailyList" class="item-grid"></div>
