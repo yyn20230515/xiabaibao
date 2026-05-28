@@ -863,7 +863,7 @@ async function loadDailyLogs(date) {
   const d = date || getToday();
   document.getElementById('dailyDate').textContent = '📅 ' + d;
   try {
-    const { data } = await sb.from('dailylog').select('*').eq('date', d).order('created_at', { ascending: true });
+    const { data } = await sb.from('dailylog').select('*').eq('date', d).order('created_at', { ascending: false });
     _dailyCache = data || [];
   } catch(e) {
     console.error('加载日常记录失败', e);
