@@ -142,6 +142,14 @@
     
     .home-summary-card { cursor: default; }
   
+  /* ===== 归档笔记 ===== */
+  .item-card.archived { opacity: .5; filter: grayscale(.6); pointer-events: none; }
+  .item-card.archived .archived-label { display: inline-block; font-size: 10px; background: #d4d4d4; color: #888; padding: 1px 8px; border-radius: 8px; margin-left: 6px; }
+  .archive-btn { border: none; background: none; font-family: inherit; font-size: 11px; color: #bbb; cursor: pointer; padding: 2px 6px; border-radius: 8px; transition: all .2s; }
+  .archive-btn:hover { background: #f0f0f0; color: #999; }
+  .restore-btn { border: none; background: #e8f5f0; font-family: inherit; font-size: 12px; color: #6a9e92; cursor: pointer; padding: 4px 12px; border-radius: 10px; font-weight: 600; margin-top: 8px; }
+  .restore-btn:hover { background: #d4ede2; }
+  
   /* ===== 详情卡片 ===== */
   .detail-card { position: relative; }
   .detail-card .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -728,9 +736,13 @@ function renderNotes() {
   });
   const el = document.getElementById('noteList');
   if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>还没有笔记</p></div>'; return; }
-  el.innerHTML = filtered.map(n => {
-    return `<div class="item-card" onclick="showNoteDetail(${n.id})">
-      <h4>${n.star ? '⭐ ' : ''}${esc(n.title)}</h4>
+  const sorted = [...filtered].sort((a,b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
+  el.innerHTML = sorted.map(n => {
+    return `<div class="item-card ${n.archived ? 'archived' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <h4>${n.star ? '⭐ ' : ''}${esc(n.title)}${n.archived ? '<span class="archived-label">已归档</span>' : ''}</h4>
+        ${!n.archived ? '<button class="archive-btn" onclick="event.stopPropagation();archiveNote(' + n.id + ')" title="标记为过时">📦 过时</button>' : '<button class="archive-btn" onclick="event.stopPropagation();unarchiveNote(' + n.id + ')" title="恢复">↩️ 重启</button>'}
+      </div>
       <div class="meta">${(n.tags||[]).map(t => '#' + esc(t)).join(' ')} · ${n.date||''}</div>
       <div class="preview">${esc((n.content||'').slice(0, 60))}</div>
     </div>`;
@@ -763,7 +775,7 @@ async function saveNote() {
   if (!title) { alert('请输入标题'); return; }
   const tags = [];
   document.querySelectorAll('#nf_tags .tag.active').forEach(t => tags.push(t.textContent));
-  const record = { title, content: document.getElementById('nf_content').value.trim(), tags, star: document.getElementById('nf_star').checked, date: getToday() };
+  const record = { title, content: document.getElementById('nf_content').value.trim(), tags, star: document.getElementById('nf_star').checked, date: getToday(), archived: false };
   const { data } = await sb.from('notes').insert(record).select();
   if (data) { _cache.notes.unshift(data[0]); }
   closeOverlay('noteForm');
@@ -1164,6 +1176,22 @@ async function studyResetWeek() {
   renderStudy();
 }
 
+
+async function archiveNote(id) {
+  const idx = findNoteIdx(id);
+  if (idx === -1) return;
+  await sb.from('notes').update({ archived: true }).eq('id', id);
+  _cache.notes[idx].archived = true;
+  renderNotes();
+}
+
+async function unarchiveNote(id) {
+  const idx = findNoteIdx(id);
+  if (idx === -1) return;
+  await sb.from('notes').update({ archived: false }).eq('id', id);
+  _cache.notes[idx].archived = false;
+  renderNotes();
+}
 // ==================== 工具 ====================
 function getToday() { return new Date().toISOString().slice(0,10); }
 function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
