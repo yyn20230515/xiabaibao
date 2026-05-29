@@ -92,7 +92,7 @@
   .date-nav button:hover { background:#e8f5f0; }
   .date-nav button:disabled { opacity:0.3; cursor:default; }
   .date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:  /* 🐣 农场 */
-  .farm-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 400px; margin: 0 auto; }
+  .farm-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
   .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 60px; }
   .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }
   .farm-plot .emoji { font-size: 28px; line-height: 1; }
@@ -116,7 +116,7 @@
   .seed-card .info { font-size: 11px; color:#999; margin-top:2px; }
   .seed-card .owned { font-size: 11px; color:#89d4b6; margin-top:2px; }
   @media (max-width: 600px) {
-    .farm-grid { gap: 5px; max-width: 100%; }
+    .farm-grid { gap: 5px; }
     .farm-plot { min-height: 50px; font-size: 11px; }
     .farm-plot .emoji { font-size: 22px; }
     .farm-plot.ready .emoji { font-size: 26px; }
