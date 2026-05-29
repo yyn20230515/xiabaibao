@@ -92,7 +92,7 @@
   .date-nav button:hover { background:#e8f5f0; }
   .date-nav button:disabled { opacity:0.3; cursor:default; }
   .date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:  /* 🐣 农场 */
-  .farm-grid { display: flex !important; flex-wrap: wrap !important; gap: 6px; width: 100%; min-height: 200px; }\n  .farm-grid .farm-plot { flex: 0 0 calc(20% - 5px) !important; box-sizing: border-box; }
+  .farm-grid { display: flex !important; flex-wrap: wrap !important; gap: 6px; width: 100%; min-height: 200px; }\n  
   .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 65px; }
   .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }
   .farm-plot .emoji { font-size: 28px; line-height: 1; }
@@ -1522,6 +1522,7 @@ function renderFarm() {
   var readyCount = plots.filter(function(p) { return p.status === 'ready'; }).length;
   var harvestBtn = document.getElementById('farmHarvestAll');
   if (harvestBtn) harvestBtn.style.display = readyCount > 0 ? 'inline' : 'none';
+  grid.style.cssText = "display:flex;flex-wrap:wrap;width:100%";
   grid.innerHTML = plots.map(function(p) {
     var idx = p.plot_index, status = p.status || 'empty';
     var emoji = '➕', label = '空地', timer = '', cls = 'empty';
@@ -1532,7 +1533,7 @@ function renderFarm() {
       var c = FARM_CROPS[p.crop];
       emoji = c.emoji; label = c.name + ' ✨'; cls = 'ready'; timer = '可收';
     }
-    return '<div class="farm-plot ' + cls + '" onclick="farmClickPlot(' + idx + ')" title="地块' + (idx+1) + '">'
+    return '<div class="farm-plot ' + cls + '" style="width:18%;flex:none;box-sizing:border-box;margin:1%" onclick="farmClickPlot(' + idx + ')' title="地块' + (idx+1) + '">'
       + '<span class="emoji">' + emoji + '</span>'
       + '<span class="label">' + label + '</span>'
       + (timer ? '<span class="timer">' + timer + '</span>' : '')
