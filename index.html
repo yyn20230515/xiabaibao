@@ -1644,8 +1644,9 @@ function getFarmTimer(plot) {
 function farmClickPlot(idx) {
   const plot = (_cache.farmPlots || []).find(p => p.plot_index === idx);
   if (!plot) return;
-  if (plot.status === 'ready') {
-    // 收获
+  const st = plot.status;
+  // 收获（成熟）
+  if (st === 'ready') {
     _farmPendingHarvest = { plot_idx: idx, crop_key: plot.crop };
     const c = FARM_CROPS[plot.crop];
     document.getElementById('farmHarvestEmoji').textContent = c ? c.emoji : '🌾';
@@ -1654,21 +1655,28 @@ function farmClickPlot(idx) {
     document.getElementById('farmHarvestForm').classList.add('show');
     return;
   }
-  if (plot.status === 'growing' && plot.crop) { if (confirm('要锄掉这棵' + (FARM_CROPS[plot.crop] ? FARM_CROPS[plot.crop].name : '作物') + '吗？种子不退回哦～')) { farmRemoveCrop(idx); } return; } if (plot.status !== 'empty') return; // growing
-  // 选种
+  // 锄地（生长中）
+  if (st === 'growing' && plot.crop) {
+    const cname = FARM_CROPS[plot.crop] ? FARM_CROPS[plot.crop].name : '作物';
+    if (confirm('要镐掉这棵' + cname + '吗？种子不退回哦～')) {
+      farmRemoveCrop(idx);
+    }
+    return;
+  }
+  // 空地 → 选种
+  if (st !== 'empty') return;
   _farmSelectedPlot = idx;
   const seedGrid = document.getElementById('farmSeedGrid');
   const inv = _cache.farmInv || [];
   seedGrid.innerHTML = Object.entries(FARM_CROPS).map(([key, c]) => {
     const item = inv.find(i => i.crop === key);
     const owned = item ? item.count : 0;
-    return '<div class="seed-card' + (owned <= 0 ? ' disabled"' : '"')
-      + (owned > 0 ? ' onclick="farmPlant(' + idx + ',\'' + key + '\')"' : '')
-      + '>'
+    return '<div class="seed-card' + (owned <= 0 ? ' disabled' : '') + '"'
+      + (owned > 0 ? ' onclick="farmPlant(' + idx + ',\'' + key + '\')"' : '') + '>'
       + '<div class="emoji">' + c.emoji + '</div>'
       + '<div class="name">' + c.name + '</div>'
-      + '<div class="info">⏱ ' + c.desc + '</div>'
-      + (owned > 0 ? '<div class="owned">拥有 ×' + owned + '</div>' : '<div class="owned" style="color:#ccc">暂无</div>')
+      + '<div class="info">\u23F1 ' + c.desc + '</div>'
+      + (owned > 0 ? '<div class="owned">拥有 \u00D7' + owned + '</div>' : '<div class="owned" style="color:#ccc">暂无</div>')
       + '</div>';
   }).join('');
   document.getElementById('farmSeedForm').classList.add('show');
