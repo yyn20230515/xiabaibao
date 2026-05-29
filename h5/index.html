@@ -612,7 +612,13 @@ async function deleteSchedule(id) {
   renderSchedules();
 }
 
-async function doSchedCheckin(id) {
+function togglePhase(el) {
+  el.classList.toggle('expanded');
+  const tasks = el.querySelector('.phase-tasks');
+  const hint = el.querySelector('.click-hint');
+  if (tasks) tasks.style.display = tasks.style.display === 'none' ? 'block' : 'none';
+  if (hint) hint.textContent = tasks && tasks.style.display === 'block' ? '▲' : '▼';
+}async function doSchedCheckin(id) {
   const idx = findSchedIdx(id);
   if (idx === -1) return;
   const p = _cache.schedules[idx];
