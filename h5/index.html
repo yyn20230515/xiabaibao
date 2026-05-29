@@ -92,7 +92,7 @@
   .date-nav button:hover { background:#e8f5f0; }
   .date-nav button:disabled { opacity:0.3; cursor:default; }
   .date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:  /* 🐣 农场 */
-  .farm-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 6px; width: 100%; min-height: 200px; }
+  .farm-grid { display: flex !important; flex-wrap: wrap !important; gap: 6px; width: 100%; min-height: 200px; }\n  .farm-grid .farm-plot { flex: 0 0 calc(20% - 5px) !important; box-sizing: border-box; }
   .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 65px; }
   .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }
   .farm-plot .emoji { font-size: 28px; line-height: 1; }
