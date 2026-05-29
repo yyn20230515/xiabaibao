@@ -1654,7 +1654,7 @@ function farmClickPlot(idx) {
     document.getElementById('farmHarvestForm').classList.add('show');
     return;
   }
-  if (plot.status !== 'empty') return; // growing
+  if (plot.status === 'growing' && plot.crop) { if (confirm('要锄掉这棵' + (FARM_CROPS[plot.crop] ? FARM_CROPS[plot.crop].name : '作物') + '吗？种子不退回哦～')) { farmRemoveCrop(idx); } return; } if (plot.status !== 'empty') return; // growing
   // 选种
   _farmSelectedPlot = idx;
   const seedGrid = document.getElementById('farmSeedGrid');
@@ -1674,6 +1674,15 @@ function farmClickPlot(idx) {
   document.getElementById('farmSeedForm').classList.add('show');
 }
 
+
+async function farmRemoveCrop(idx) {
+  try {
+    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', idx);
+    var plot = _cache.farmPlots.find(function(p) { return p.plot_index === idx; });
+    if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; }
+    renderFarm();
+  } catch(e) { console.error(e); alert('锄地失败'); }
+}
 async function farmPlant(idx, cropKey) {
   const c = FARM_CROPS[cropKey];
   if (!c) return;
