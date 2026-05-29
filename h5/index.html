@@ -1533,7 +1533,7 @@ function renderFarm() {
       var c = FARM_CROPS[p.crop];
       emoji = c.emoji; label = c.name + ' ✨'; cls = 'ready'; timer = '可收';
     }
-    return '<div class="farm-plot ' + cls + '" style="width:18%;flex:none;box-sizing:border-box;margin:1%" onclick="farmClickPlot(' + idx + ')' title="地块' + (idx+1) + '">'
+    return '<div class="farm-plot ' + cls + '" style="width:18%;flex:none;box-sizing:border-box;margin:1%" onclick="farmClickPlot(' + idx + ')" title="地块' + (idx+1) + '">'
       + '<span class="emoji">' + emoji + '</span>'
       + '<span class="label">' + label + '</span>'
       + (timer ? '<span class="timer">' + timer + '</span>' : '')
