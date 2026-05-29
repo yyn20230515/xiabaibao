@@ -81,6 +81,17 @@
   .phase-item .phase-info { flex: 1; }
   .phase-item .phase-name { font-weight: 700; font-size: 14px; color: #3d5a5c; }
   .phase-item .phase-dates { font-size: 12px; color: #a0b8b0; }
+.phase-desc { font-size: 12px; color: #888; margin: 2px 0 6px 0; line-height:1.4; }
+.phase-tasks { margin: 4px 0 0 16px; padding: 0; }
+.phase-tasks li { font-size: 12px; color: #555; margin-bottom: 3px; list-style: disc; list-style-position: inside; }
+.phase-tasks li.done { color: #a8e6cf; text-decoration: line-through; }
+.phase-item .click-hint { font-size: 11px; color: #bbb; cursor: pointer; margin-left: 4px; }
+.phase-item.expanded { background: #f0f9f4; border-radius: 6px; }
+/* 手机版 */
+@media (max-width: 600px) {
+  .phase-desc { font-size: 13px; }
+  .phase-tasks li { font-size: 13px; }
+}
   
   .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(45,52,54,.35); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
   .overlay.show { display: flex; }
@@ -595,8 +606,14 @@ function showScheduleForm() {
 function addSfPhase() {
   const el = document.getElementById('sf_phases');
   const d = document.createElement('div');
-  d.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
-  d.innerHTML = `<input placeholder="阶段名" class="sf_pname" style="flex:2;font-size:13px"><input type="number" min="1" class="sf_pdays" placeholder="天数" style="flex:1;width:60px;font-size:13px"><button onclick="this.parentElement.remove()" style="border:none;background:none;color:#ff5252;font-size:16px;cursor:pointer">✕</button>`;
+  d.style.cssText = 'margin-bottom:10px;padding:8px;background:#f8fcfb;border-radius:6px';
+  d.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:4px">
+    <input placeholder="阶段名" class="sf_pname" style="flex:2;font-size:13px">
+    <input type="number" min="1" class="sf_pdays" placeholder="天数" style="flex:0 0 60px;font-size:13px">
+    <button onclick="this.parentElement.parentElement.remove()" style="border:none;background:none;color:#ff5252;font-size:16px;cursor:pointer">✕</button>
+  </div>
+  <input placeholder="阶段描述（如：养成习惯期、稳步减重期）" class="sf_pdesc" style="width:100%;font-size:12px;margin-bottom:4px;box-sizing:border-box">
+  <textarea placeholder="每日任务清单（每行一条任务）" class="sf_ptasks" rows="3" style="width:100%;font-size:12px;box-sizing:border-box;resize:vertical"></textarea>`;
   el.appendChild(d);
 }
 
@@ -607,7 +624,12 @@ async function saveSchedule() {
   document.querySelectorAll('#sf_phases > div').forEach(el => {
     const n = el.querySelector('.sf_pname').value.trim();
     const d = parseInt(el.querySelector('.sf_pdays').value);
-    if (n && d > 0) phases.push({ name: n, days: d, checkedDays: 0, lastCheckin: '' });
+    if (n && d > 0) {
+      const desc = el.querySelector('.sf_pdesc') ? el.querySelector('.sf_pdesc').value.trim() : '';
+      const tasksRaw = el.querySelector('.sf_ptasks') ? el.querySelector('.sf_ptasks').value : '';
+      const tasks = tasksRaw.split('\n').map(t => t.trim()).filter(t => t);
+      phases.push({ name: n, days: d, desc, tasks, checkedDays: 0, lastCheckin: '' });
+    }
   });
   if (!phases.length) { alert('请至少添加一个阶段'); return; }
   const record = { name, description: document.getElementById('sf_desc').value.trim(), link: document.getElementById('sf_link').value.trim(), phases };
@@ -647,12 +669,16 @@ async function openScheduleDetail(id) {
     </button>`;
   }
 
-  html += `<div class="card"><div class="card-title">📊 阶段</div>`;
+  html += `<div class="card"><div class="card-title">📊 阶段 <span style="font-size:11px;color:#999;font-weight:normal">（点击展开每日任务）</span></div>`;
   phases.forEach((ph, i) => {
     const completed = (ph.checkedDays||0) >= (ph.days||0);
-    html += `<div class="phase-item ${completed?'done':''}">
-      <div class="phase-info"><div class="phase-name">${esc(ph.name)} ${completed ? '✅' : (i===curIdx?'← 当前':'')}</div>
-      <div class="phase-dates">${ph.days||0}天 · 已打卡${ph.checkedDays||0}天</div></div>
+    const tasks = ph.tasks || [];
+    const hasDetail = ph.desc || tasks.length > 0;
+    html += `<div class="phase-item ${completed?'done':''}" ${hasDetail ? `onclick="togglePhase(this)" style="cursor:pointer"` : ''}>
+      <div class="phase-info"><div class="phase-name">${esc(ph.name)} ${completed ? '✅' : (i===curIdx?'← 当前':'')}${hasDetail ? '<span class="click-hint">▼</span>' : ''}</div>
+      <div class="phase-dates">${ph.days||0}天 · 已打卡${ph.checkedDays||0}天</div>
+      ${ph.desc ? `<div class="phase-desc">${esc(ph.desc)}</div>` : ''}
+      ${tasks.length > 0 ? `<ul class="phase-tasks" style="display:none">${tasks.map(t => '<li>' + esc(t) + '</li>').join('')}</ul>` : ''}</div>
     </div>`;
   });
   html += `</div>`;
@@ -668,6 +694,14 @@ async function deleteSchedule(id) {
   renderSchedules();
 }
 
+
+function togglePhase(el) {
+  el.classList.toggle('expanded');
+  const tasks = el.querySelector('.phase-tasks');
+  const hint = el.querySelector('.click-hint');
+  if (tasks) tasks.style.display = tasks.style.display === 'none' ? 'block' : 'none';
+  if (hint) hint.textContent = tasks && tasks.style.display === 'block' ? '▲' : '▼';
+}
 async function doSchedCheckin(id) {
   const idx = findSchedIdx(id);
   if (idx === -1) return;
