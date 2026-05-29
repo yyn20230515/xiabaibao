@@ -1360,7 +1360,7 @@ async function confirmDailyDelete() {
   toggleDailyDelete();
 }
 // ==================== 工具 ====================
-function getToday() { return new Date().toISOString().slice(0,10); }
+function getToday() { const d=new Date(); const utc=d.getTime()+d.getTimezoneOffset()*60000; return new Date(utc+8*3600000).toISOString().slice(0,10); }
 function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ==================== 启动 ====================
