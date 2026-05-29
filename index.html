@@ -1724,7 +1724,7 @@ async function farmDoHarvest() {
     const invItem = (_cache.farmInv || []).find(i => i.crop === crop_key);
     if (invItem) {
       await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', crop_key);
-      invItem.count += 1;
+      invItem.count += 2;
     }
     // 清空地
     await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', plot_idx);
@@ -1745,7 +1745,7 @@ async function farmHarvestAll() {
     const invItem = (_cache.farmInv || []).find(i => i.crop === plot.crop);
     if (invItem) {
       await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', plot.crop);
-      invItem.count += 1;
+      invItem.count += 2;
     }
     await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', plot.plot_index);
     plot.crop = null; plot.planted_at = null; plot.status = 'empty';
