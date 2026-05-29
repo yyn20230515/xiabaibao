@@ -556,7 +556,7 @@ async function goPage(name, extra) { stopFarmTimer();
   if (name === 'idea') { try { const { data } = await sb.from('ideas').select('*').order('id', { ascending: false }); _cache.ideas = data || []; } catch(e) {} renderIdeaTags(); renderIdeas(); }
   if (name === 'note') { try { const { data } = await sb.from('notes').select('*').order('id', { ascending: false }); _cache.notes = data || []; _cache.noteTags = [...new Set((data||[]).flatMap(n => n.tags||[]))]; } catch(e) {} renderNoteTags(); renderNotes(); }
   if (name === 'daily') { loadDailyLogs(); }
-    if (name === 'farm') { startFarmTimer(); loadFarm(); }
+    if (name === 'farm') { loadFarm(); setTimeout(function() { startFarmTimer(); }, 500); }
 }
 
 async function loadMenuItems() {
