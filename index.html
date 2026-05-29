@@ -1600,7 +1600,7 @@ function renderFarm() {
   const harvestBtn = document.getElementById('farmHarvestAll');
   if (harvestBtn) harvestBtn.style.display = readyCount > 0 ? 'inline' : 'none';
 
-  grid.style.cssText = 'display:flex;flex-wrap:wrap;width:100%';
+  grid.style.cssText = 'display:flex;flex-wrap:wrap;width:100%;border:2px solid #c8dcc8;border-radius:12px;padding:8px;background:#f5faf5;box-sizing:border-box';
   grid.innerHTML = plots.map(p => {
     const idx = p.plot_index;
     const status = p.status || 'empty';

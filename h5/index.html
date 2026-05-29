@@ -1522,7 +1522,7 @@ function renderFarm() {
   var readyCount = plots.filter(function(p) { return p.status === 'ready'; }).length;
   var harvestBtn = document.getElementById('farmHarvestAll');
   if (harvestBtn) harvestBtn.style.display = readyCount > 0 ? 'inline' : 'none';
-  grid.style.cssText = "display:flex;flex-wrap:wrap;width:100%";
+  grid.style.cssText = "display:flex;flex-wrap:wrap;width:100%;border:2px solid #c8dcc8;border-radius:12px;padding:8px;background:#f5faf5;box-sizing:border-box";
   grid.innerHTML = plots.map(function(p) {
     var idx = p.plot_index, status = p.status || 'empty';
     var emoji = '➕', label = '空地', timer = '', cls = 'empty';
