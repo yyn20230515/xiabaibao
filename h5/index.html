@@ -92,16 +92,16 @@
   .date-nav button:hover { background:#e8f5f0; }
   .date-nav button:disabled { opacity:0.3; cursor:default; }
   .date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:  /* 🐣 农场 */
-  .farm-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
-  .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 60px; }
+  .farm-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 6px; width: 100%; min-height: 200px; }
+  .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 65px; }
   .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }
   .farm-plot .emoji { font-size: 28px; line-height: 1; }
   .farm-plot .label { font-size: 11px; color: #666; margin-top: 2px; }
   .farm-plot .timer { font-size: 10px; color: #999; position: absolute; bottom: 3px; right: 5px; }
   .farm-plot.ready { border-color: #ffd700; background: #fffbe6; animation: farmPulse 1s ease-in-out infinite; }
   .farm-plot.ready .emoji { font-size: 32px; }
-  .farm-plot.empty { border-style: dashed; border-color: #c8dcc8; background: #f8fcf8; }
-  .farm-plot.empty .emoji { font-size: 20px; opacity: .4; }
+  .farm-plot.empty { border-style: dashed; border-color: #b8d8b8; background: #f0faf0; }
+  .farm-plot.empty .emoji { font-size: 26px; }
   @keyframes farmPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,215,0,0); } }
   .farm-inv { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
   .farm-inv-item { background: #f8fcfb; border: 1px solid #d0e2dc; border-radius: 8px; padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px; }
