@@ -224,6 +224,28 @@
   .password-box .pw-btn:active { transform: scale(.97); }
   #passwordError { color: #ff5252; font-size: 13px; margin-top: 8px; display: none; }
 
+
+/* ===== 小说阅读 ===== */
+.novel-card { background:#fff; border-radius:16px; padding:16px; margin-bottom:10px; box-shadow:0 3px 16px rgba(137,212,182,.12); border:1px solid rgba(137,212,182,.12); cursor:pointer; transition:transform .2s; }
+.novel-card:active { transform:scale(.97); }
+.novel-card h3 { font-size:16px; color:#3d5a5c; margin-bottom:4px; }
+.novel-card .sub { font-size:12px; color:#aabfbb; }
+.novel-chapter { display:flex; align-items:center; padding:10px 4px; border-bottom:1px solid #f0f5f3; cursor:pointer; }
+.novel-chapter:active { background:#f5faf8; }
+.novel-chapter .num { color:#89d4b6; font-weight:700; font-size:14px; margin-right:10px; min-width:48px; }
+.novel-chapter .title { flex:1; font-size:14px; color:#3d5a5c; }
+.novel-chapter .vol { font-size:11px; color:#aabfbb; }
+.reader-content { font-size:16px; line-height:2; color:#3d5a5c; padding:16px 0; white-space:pre-wrap; word-wrap:break-word; }
+.reader-header { text-align:center; padding:16px 0; border-bottom:1px solid #eef5f2; margin-bottom:16px; }
+.reader-header h2 { font-size:18px; color:#3d5a5c; }
+.reader-nav { display:flex; gap:8px; margin-top:20px; }
+.reader-nav button { flex:1; padding:10px; border:none; border-radius:12px; background:#f0f8f5; color:#3d5a5c; font-size:14px; font-weight:600; cursor:pointer; }
+.reader-nav button:active { background:#d4eae3; }
+.reader-nav button:disabled { opacity:.3; }
+.search-box { width:100%; padding:10px 14px; border:1.5px solid #d4eae3; border-radius:12px; font-size:14px; margin-bottom:12px; background:#f8fcfb; }
+.search-box:focus { outline:none; border-color:#89d4b6; }
+.novel-empty { text-align:center; padding:40px 16px; color:#aabfbb; font-size:14px; }
+
 </style>
 </head>
 <body>
@@ -544,7 +566,7 @@ async function goPage(name, extra) { stopFarmTimer();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 0, schedule: 1, countdown: 2, farm: 3 };
+  const navMap = { home: 0, schedule: 1, countdown: 2, farm: 3, novel: 4 };
   const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && nb[ni]) nb[ni].classList.add('active');
   document.querySelectorAll('.desktop-nav-links a').forEach(a => a.classList.remove('active'));
   const dLink = document.querySelector(`.desktop-nav-links a[onclick*="'${name}'"]`);
@@ -557,6 +579,8 @@ async function goPage(name, extra) { stopFarmTimer();
   if (name === 'note') { try { const { data } = await sb.from('notes').select('*').order('id', { ascending: false }); _cache.notes = data || []; _cache.noteTags = [...new Set((data||[]).flatMap(n => n.tags||[]))]; } catch(e) {} renderNoteTags(); renderNotes(); }
   if (name === 'daily') { loadDailyLogs(); }
     if (name === 'farm') { loadFarm(); setTimeout(function() { startFarmTimer(); }, 500); }
+  if (name === 'novel') { loadNovels(); }
+  if (name === 'novel-read') { }
 }
 
 async function loadMenuItems() {
@@ -579,6 +603,16 @@ function closeOverlay(id) { document.getElementById(id).classList.remove('show')
 
 // ==================== 主页 ====================
 function updateHome() {
+  // 动态添加小说菜单（如果数据库还没有）
+  var menuGrid = document.getElementById("menuGrid");
+  if (menuGrid && !menuGrid.querySelector('[data-page="novel"]')) {
+    var card = document.createElement("div");
+    card.className = "menu-card";
+    card.setAttribute("data-page", "novel");
+    card.onclick = function(){ goPage("novel"); };
+    card.innerHTML = '<span class="icon">📖</span><div class="name">小说</div><div class="desc">看阿夏写的书</div>';
+    menuGrid.appendChild(card);
+  }
   const scheds = _cache.schedules;
   const ideas = _cache.ideas;
   const notes = _cache.notes;
@@ -1787,6 +1821,109 @@ async function checkFarmReady() {
 function stopFarmTimer() {
   if (_farmTimer) { clearInterval(_farmTimer); _farmTimer = null; }
 }
+
+// 📚 小说阅读
+var _novels = [];
+var _novelChapters = [];
+var _currentChapterIdx = -1;
+
+async function loadNovels() {
+  try {
+    const { data } = await sb.from('novels').select('*').order('sort_order');
+    _novels = data || [];
+    renderNovels();
+  } catch(e) { console.error(e); }
+}
+
+function renderNovels() {
+  var el = document.getElementById('novelList');
+  if (!el) return;
+  if (!_novels.length) { el.innerHTML = '<div class="novel-empty">📚 还没有小说哦～</div>'; return; }
+  el.innerHTML = _novels.map(function(n) {
+    return '<div class="novel-card" onclick="openNovel(' + n.id + ')"><h3>' + esc(n.name) + '</h3><div class="sub">' + (n.description ? esc(n.description).slice(0,60) : '📖 阿夏的作品') + '</div></div>';
+  }).join('');
+}
+
+function filterNovels(val) {
+  var cards = document.querySelectorAll('#novelList .novel-card');
+  cards.forEach(function(c) {
+    c.style.display = c.textContent.includes(val) ? '' : 'none';
+  });
+}
+
+async function openNovel(id) {
+  try {
+    const { data } = await sb.from('novel_chapters').select('*').eq('novel_id', id).order('sort_order');
+    _novelChapters = data || [];
+    var novel = _novels.find(function(n) { return n.id === id; });
+    document.getElementById('novelChaptersTitle').textContent = '📖 ' + (novel ? esc(novel.name) : '未知');
+    renderChapters();
+    goPage('novel-chapters');
+  } catch(e) { console.error(e); }
+}
+
+function renderChapters() {
+  var el = document.getElementById('chapterList');
+  if (!el) return;
+  if (!_novelChapters.length) { el.innerHTML = '<div class="novel-empty">📝 还没有章节～</div>'; return; }
+  var html = '';
+  var lastVol = '';
+  for (var i = 0; i < _novelChapters.length; i++) {
+    var ch = _novelChapters[i];
+    if (ch.volume_name && ch.volume_name !== lastVol) {
+      lastVol = ch.volume_name;
+      html += '<div style="font-size:13px;color:#89d4b6;font-weight:700;padding:12px 4px 4px;">📁 ' + esc(ch.volume_name) + '</div>';
+    }
+    html += '<div class="novel-chapter" onclick="openChapter(' + i + ')"><span class="num">第' + ch.chapter_num + '章</span><span class="title">' + esc(ch.title) + '</span></div>';
+  }
+  el.innerHTML = html;
+}
+
+async function openChapter(idx) {
+  _currentChapterIdx = idx;
+  var ch = _novelChapters[idx];
+  if (!ch) return;
+  document.getElementById('readerTitle').textContent = '第' + ch.chapter_num + '章 ' + esc(ch.title);
+  document.getElementById('readerContent').textContent = ch.content;
+  document.getElementById('readerPrev').disabled = idx <= 0;
+  document.getElementById('readerNext').disabled = idx >= _novelChapters.length - 1;
+  goPage('novel-read');
+}
+
+function readerPrev() {
+  if (_currentChapterIdx > 0) openChapter(_currentChapterIdx - 1);
+}
+
+function readerNext() {
+  if (_currentChapterIdx < _novelChapters.length - 1) openChapter(_currentChapterIdx + 1);
+}
 </script>
+
+<!-- ==================== 小说列表页 ==================== -->
+<div class="page" id="page-novel">
+  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
+  <h2 style="font-size:20px;color:#3d5a5c;margin:8px 0;">📚 小说架</h2>
+  <input class="search-box" id="novelSearch" placeholder="🔍 搜索小说..." oninput="filterNovels(this.value)">
+  <div id="novelList"></div>
+</div>
+
+<!-- ==================== 小说章节页 ==================== -->
+<div class="page" id="page-novel-chapters">
+  <button class="back-btn" onclick="goPage('novel')">← 返回书库</button>
+  <h2 style="font-size:18px;color:#3d5a5c;margin:8px 0;" id="novelChaptersTitle"></h2>
+  <div id="chapterList"></div>
+</div>
+
+<!-- ==================== 小说阅读页 ==================== -->
+<div class="page" id="page-novel-read">
+  <button class="back-btn" onclick="goPage('novel-chapters')">← 目录</button>
+  <div class="reader-header"><h2 id="readerTitle"></h2></div>
+  <div class="reader-content" id="readerContent"></div>
+  <div class="reader-nav">
+    <button id="readerPrev" onclick="readerPrev()">← 上一章</button>
+    <button id="readerNext" onclick="readerNext()">下一章 →</button>
+  </div>
+</div>
+
 </body>
 </html>
