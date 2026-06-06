@@ -566,8 +566,8 @@ async function goPage(name, extra) { stopFarmTimer();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 0, schedule: 1, countdown: 2, farm: 3, novel: 4 };
-  const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && nb[ni]) nb[ni].classList.add('active');
+  const navMap = { home: 0, schedule: 1, countdown: 2, farm: 3 };
+  const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && ni >= 0 && nb[ni]) nb[ni].classList.add('active');
   document.querySelectorAll('.desktop-nav-links a').forEach(a => a.classList.remove('active'));
   const dLink = document.querySelector(`.desktop-nav-links a[onclick*="'${name}'"]`);
   if (dLink) dLink.classList.add('active');
@@ -1826,6 +1826,17 @@ function stopFarmTimer() {
 var _novels = [];
 var _novelChapters = [];
 var _currentChapterIdx = -1;
+var _currentNovelId = null;
+
+// === 书签 ===
+function getBookmark() {
+  try { return JSON.parse(localStorage.getItem('novelBookmark') || '{}'); } catch(e) { return {}; }
+}
+function saveBookmark(novelId, chapterIdx) {
+  var bm = getBookmark();
+  bm[novelId] = chapterIdx;
+  localStorage.setItem('novelBookmark', JSON.stringify(bm));
+}
 
 async function loadNovels() {
   try {
@@ -1839,8 +1850,14 @@ function renderNovels() {
   var el = document.getElementById('novelList');
   if (!el) return;
   if (!_novels.length) { el.innerHTML = '<div class="novel-empty">📚 还没有小说哦～</div>'; return; }
+  var bm = getBookmark();
   el.innerHTML = _novels.map(function(n) {
-    return '<div class="novel-card" onclick="openNovel(' + n.id + ')"><h3>' + esc(n.name) + '</h3><div class="sub">' + (n.description ? esc(n.description).slice(0,60) : '📖 阿夏的作品') + '</div></div>';
+    var savedIdx = bm[n.id];
+    var resumeBtn = '';
+    if (savedIdx !== undefined && savedIdx >= 0) {
+      resumeBtn = '<div style="font-size:12px;color:#89d4b6;margin-top:4px;">📖 读到第' + (savedIdx+1) + '章 点击继续</div>';
+    }
+    return '<div class="novel-card" onclick="openNovel(' + n.id + ')"><h3>' + esc(n.name) + '</h3>' + resumeBtn + '</div>';
   }).join('');
 }
 
@@ -1855,6 +1872,7 @@ async function openNovel(id) {
   try {
     const { data } = await sb.from('novel_chapters').select('*').eq('novel_id', id).order('sort_order');
     _novelChapters = data || [];
+    _currentNovelId = id;
     var novel = _novels.find(function(n) { return n.id === id; });
     document.getElementById('novelChaptersTitle').textContent = '📖 ' + (novel ? esc(novel.name) : '未知');
     renderChapters();
@@ -1866,6 +1884,8 @@ function renderChapters() {
   var el = document.getElementById('chapterList');
   if (!el) return;
   if (!_novelChapters.length) { el.innerHTML = '<div class="novel-empty">📝 还没有章节～</div>'; return; }
+  var bm = getBookmark();
+  var savedIdx = _currentNovelId ? bm[_currentNovelId] : undefined;
   var html = '';
   var lastVol = '';
   for (var i = 0; i < _novelChapters.length; i++) {
@@ -1874,7 +1894,8 @@ function renderChapters() {
       lastVol = ch.volume_name;
       html += '<div style="font-size:13px;color:#89d4b6;font-weight:700;padding:12px 4px 4px;">📁 ' + esc(ch.volume_name) + '</div>';
     }
-    html += '<div class="novel-chapter" onclick="openChapter(' + i + ')"><span class="num">第' + ch.chapter_num + '章</span><span class="title">' + esc(ch.title) + '</span></div>';
+    var isSaved = (savedIdx === i);
+    html += '<div class="novel-chapter" onclick="openChapter(' + i + ')"><span class="num">' + (isSaved ? '📍 ' : '') + '第' + ch.chapter_num + '章</span><span class="title">' + esc(ch.title) + '</span></div>';
   }
   el.innerHTML = html;
 }
@@ -1883,10 +1904,16 @@ async function openChapter(idx) {
   _currentChapterIdx = idx;
   var ch = _novelChapters[idx];
   if (!ch) return;
+  // 自动保存书签
+  if (_currentNovelId) saveBookmark(_currentNovelId, idx);
+  
   document.getElementById('readerTitle').textContent = '第' + ch.chapter_num + '章 ' + esc(ch.title);
   document.getElementById('readerContent').textContent = ch.content;
   document.getElementById('readerPrev').disabled = idx <= 0;
   document.getElementById('readerNext').disabled = idx >= _novelChapters.length - 1;
+  
+  // 加载书评
+  loadReviews(ch.id);
   goPage('novel-read');
 }
 
@@ -1896,6 +1923,44 @@ function readerPrev() {
 
 function readerNext() {
   if (_currentChapterIdx < _novelChapters.length - 1) openChapter(_currentChapterIdx + 1);
+}
+
+// === 书评 ===
+async function loadReviews(chapterId) {
+  var el = document.getElementById('reviewList');
+  if (!el) return;
+  try {
+    const { data } = await sb.from('novel_reviews').select('*').eq('chapter_id', chapterId).order('created_at', { ascending: false });
+    if (!data || !data.length) {
+      el.innerHTML = '<div style="text-align:center;padding:12px;color:#aabfbb;font-size:13px;">还没有书评，写一条吧～</div>';
+    } else {
+      el.innerHTML = data.map(function(r) {
+        return '<div style="background:#f8fcfb;border-radius:10px;padding:10px;margin-bottom:8px;border:1px solid #d4eae3;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">' +
+          '<span style="color:#89d4b6;font-weight:600;">' + esc(r.author) + '</span>' +
+          '<span style="color:#aabfbb;">' + (r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '') + '</span></div>' +
+          '<div style="font-size:13px;color:#3d5a5c;">' + esc(r.content) + '</div></div>';
+      }).join('');
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:12px;color:#aabfbb;">💬</div>';
+  }
+}
+
+async function submitReview() {
+  var ch = _novelChapters[_currentChapterIdx];
+  if (!ch) { alert('请先打开章节'); return; }
+  var author = document.getElementById('reviewAuthor').value.trim() || '主人';
+  var content = document.getElementById('reviewContent').value.trim();
+  if (!content) { alert('写点内容再提交吧～'); return; }
+  
+  try {
+    await sb.from('novel_reviews').insert({ chapter_id: ch.id, author: author, content: content });
+    document.getElementById('reviewContent').value = '';
+    loadReviews(ch.id);
+  } catch(e) {
+    alert('提交失败: ' + e.message);
+  }
 }
 </script>
 
@@ -1922,6 +1987,16 @@ function readerNext() {
   <div class="reader-nav">
     <button id="readerPrev" onclick="readerPrev()">← 上一章</button>
     <button id="readerNext" onclick="readerNext()">下一章 →</button>
+  </div>
+  <!-- 书评区 -->
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #d4eae3;">
+    <h3 style="font-size:15px;color:#3d5a5c;margin-bottom:10px;">💬 书评</h3>
+    <div id="reviewList" style="margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input id="reviewAuthor" placeholder="你的名字" value="主人" style="flex:1;font-size:13px;padding:8px 10px;">
+    </div>
+    <textarea id="reviewContent" placeholder="写点读后感、吐槽、建议……" rows="2" style="font-size:13px;margin-bottom:8px;"></textarea>
+    <button class="btn btn-primary btn-sm" onclick="submitReview()" style="width:100%;">📝 提交书评</button>
   </div>
 </div>
 
