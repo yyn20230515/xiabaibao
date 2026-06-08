@@ -1809,6 +1809,7 @@ async function openChapter(idx) {
   document.getElementById('readerNext').disabled = idx >= _novelChapters.length - 1;
   loadReviews(ch.id);
   goPage('novel-read');
+  window.scrollTo(0, 0);
 }
 
 function readerPrev() {
