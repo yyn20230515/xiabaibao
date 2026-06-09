@@ -564,10 +564,10 @@ async function syncTag(module, name) {
 // ==================== 导航 ====================
 async function goPage(name, extra) { stopFarmTimer();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('page-' + name)?.classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
   const navMap = { home: 0, schedule: 1, countdown: 2, farm: 3 };
-  const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && ni >= 0 && nb[ni]) nb[ni].classList.add('active');
+  const nb = document.querySelectorAll('.bottom-nav button'); const ni = navMap[name]; if (ni !== undefined && ni >= 0 && ni < nb.length) nb[ni].classList.add('active');
   document.querySelectorAll('.desktop-nav-links a').forEach(a => a.classList.remove('active'));
   const dLink = document.querySelector(`.desktop-nav-links a[onclick*="'${name}'"]`);
   if (dLink) dLink.classList.add('active');
@@ -1297,7 +1297,7 @@ function getMonday(d) {
 function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 function getDefaultTasks(wkDay) {
-  const isWeekend = wkDay >= 6; // 6=Sat, 0=Sun
+  const isWeekend = wkDay === 0 || wkDay === 6; // 0=Sun, 6=Sat
   if (isWeekend) {
     return [
       { title: '行测专项3h', duration: 180, done: false },
@@ -1721,7 +1721,7 @@ function farmClickPlot(idx) {
 async function farmRemoveCrop(idx) {
   try {
     await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', idx);
-    var plot = _cache.farmPlots.find(function(p) { return p.plot_index === idx; });
+    const plot = _cache.farmPlots.find(function(p) { return p.plot_index === idx; });
     if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; }
     renderFarm();
   } catch(e) { console.error(e); alert('锄地失败'); }
@@ -1754,10 +1754,10 @@ async function farmDoHarvest() {
   _farmPendingHarvest = null;
   closeOverlay('farmHarvestForm');
   try {
-    // 收获：加库存
+    // 收获：加库存（收获得到2个作物）
     const invItem = (_cache.farmInv || []).find(i => i.crop === crop_key);
     if (invItem) {
-      await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', crop_key);
+      await sb.from('farm_inventory').update({ count: invItem.count + 2 }).eq('crop', crop_key);
       invItem.count += 2;
     }
     // 清空地
@@ -1778,7 +1778,7 @@ async function farmHarvestAll() {
   for (const plot of ready) {
     const invItem = (_cache.farmInv || []).find(i => i.crop === plot.crop);
     if (invItem) {
-      await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', plot.crop);
+      await sb.from('farm_inventory').update({ count: invItem.count + 2 }).eq('crop', plot.crop);
       invItem.count += 2;
     }
     await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', plot.plot_index);
@@ -1823,17 +1823,17 @@ function stopFarmTimer() {
 }
 
 // 📚 小说阅读
-var _novels = [];
-var _novelChapters = [];
-var _currentChapterIdx = -1;
-var _currentNovelId = null;
+let _novels = [];
+let _novelChapters = [];
+let _currentChapterIdx = -1;
+let _currentNovelId = null;
 
 // === 书签 ===
 function getBookmark() {
   try { return JSON.parse(localStorage.getItem('novelBookmark') || '{}'); } catch(e) { return {}; }
 }
 function saveBookmark(novelId, chapterIdx) {
-  var bm = getBookmark();
+  const bm = getBookmark();
   bm[novelId] = chapterIdx;
   localStorage.setItem('novelBookmark', JSON.stringify(bm));
 }
@@ -1847,13 +1847,13 @@ async function loadNovels() {
 }
 
 function renderNovels() {
-  var el = document.getElementById('novelList');
+  const el = document.getElementById('novelList');
   if (!el) return;
   if (!_novels.length) { el.innerHTML = '<div class="novel-empty">📚 还没有小说哦～</div>'; return; }
-  var bm = getBookmark();
+  const bm = getBookmark();
   el.innerHTML = _novels.map(function(n) {
-    var savedIdx = bm[n.id];
-    var resumeBtn = '';
+    const savedIdx = bm[n.id];
+    let resumeBtn = '';
     if (savedIdx !== undefined && savedIdx >= 0) {
       resumeBtn = '<div style="font-size:12px;color:#89d4b6;margin-top:4px;">📖 读到第' + (savedIdx+1) + '章 点击继续</div>';
     }
@@ -1862,7 +1862,7 @@ function renderNovels() {
 }
 
 function filterNovels(val) {
-  var cards = document.querySelectorAll('#novelList .novel-card');
+  const cards = document.querySelectorAll('#novelList .novel-card');
   cards.forEach(function(c) {
     c.style.display = c.textContent.includes(val) ? '' : 'none';
   });
@@ -1873,7 +1873,7 @@ async function openNovel(id) {
     const { data } = await sb.from('novel_chapters').select('*').eq('novel_id', id).order('sort_order');
     _novelChapters = data || [];
     _currentNovelId = id;
-    var novel = _novels.find(function(n) { return n.id === id; });
+    const novel = _novels.find(function(n) { return n.id === id; });
     document.getElementById('novelChaptersTitle').textContent = '📖 ' + (novel ? esc(novel.name) : '未知');
     renderChapters();
     goPage('novel-chapters');
@@ -1881,20 +1881,20 @@ async function openNovel(id) {
 }
 
 function renderChapters() {
-  var el = document.getElementById('chapterList');
+  const el = document.getElementById('chapterList');
   if (!el) return;
   if (!_novelChapters.length) { el.innerHTML = '<div class="novel-empty">📝 还没有章节～</div>'; return; }
-  var bm = getBookmark();
-  var savedIdx = _currentNovelId ? bm[_currentNovelId] : undefined;
-  var html = '';
-  var lastVol = '';
-  for (var i = 0; i < _novelChapters.length; i++) {
-    var ch = _novelChapters[i];
+  const bm = getBookmark();
+  const savedIdx = _currentNovelId ? bm[_currentNovelId] : undefined;
+  let html = '';
+  let lastVol = '';
+  for (let i = 0; i < _novelChapters.length; i++) {
+    const ch = _novelChapters[i];
     if (ch.volume_name && ch.volume_name !== lastVol) {
       lastVol = ch.volume_name;
       html += '<div style="font-size:13px;color:#89d4b6;font-weight:700;padding:12px 4px 4px;">📁 ' + esc(ch.volume_name) + '</div>';
     }
-    var isSaved = (savedIdx === i);
+    const isSaved = (savedIdx === i);
     html += '<div class="novel-chapter" onclick="openChapter(' + i + ')"><span class="num">' + (isSaved ? '📍 ' : '') + '第' + ch.chapter_num + '章</span><span class="title">' + esc(ch.title) + '</span></div>';
   }
   el.innerHTML = html;
@@ -1902,7 +1902,7 @@ function renderChapters() {
 
 async function openChapter(idx) {
   _currentChapterIdx = idx;
-  var ch = _novelChapters[idx];
+  const ch = _novelChapters[idx];
   if (!ch) return;
   // 自动保存书签
   if (_currentNovelId) saveBookmark(_currentNovelId, idx);
@@ -1928,7 +1928,7 @@ function readerNext() {
 
 // === 书评 ===
 async function loadReviews(chapterId) {
-  var el = document.getElementById('reviewList');
+  const el = document.getElementById('reviewList');
   if (!el) return;
   try {
     const { data } = await sb.from('novel_reviews').select('*').eq('chapter_id', chapterId).order('created_at', { ascending: false });
@@ -1949,10 +1949,10 @@ async function loadReviews(chapterId) {
 }
 
 async function submitReview() {
-  var ch = _novelChapters[_currentChapterIdx];
+  const ch = _novelChapters[_currentChapterIdx];
   if (!ch) { alert('请先打开章节'); return; }
-  var author = document.getElementById('reviewAuthor').value.trim() || '主人';
-  var content = document.getElementById('reviewContent').value.trim();
+  const author = document.getElementById('reviewAuthor').value.trim() || '主人';
+  const content = document.getElementById('reviewContent').value.trim();
   if (!content) { alert('写点内容再提交吧～'); return; }
   
   try {
