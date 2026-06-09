@@ -11,6 +11,11 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { overflow-x: hidden; font-family: 'Nunito', 'KaiTi', 'STKaiti', '楷体', 'PingFang SC', sans-serif; background: #f0f8f5; min-height: 100vh; color: #2d3436; }
   
+  /* ===== 顶部导航栏（子页面） ===== */
+  .top-nav { position: sticky; top: 0; z-index: 60; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(137,212,182,.2); padding: 10px 16px; display: flex; align-items: center; gap: 8px; margin: -16px -16px 12px; }
+  .top-nav .back-btn { margin: 0; padding: 6px 12px; background: #f0f8f5; border-radius: 10px; font-size: 14px; }
+  .top-nav .page-title { flex: 1; font-size: 17px; font-weight: 700; color: #3d5a5c; }
+  
   /* ===== 基础（手机端优先） ===== */
   .page { display: none; padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
   .page.active { display: block; }
@@ -291,9 +296,11 @@
 
 <!-- ==================== 日程页 ==================== -->
 <div id="page-schedule" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2>📅 日程计划</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">📅 日程计划</span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-primary btn-sm" onclick="showScheduleForm()">➕ 新建</button>
   </div>
   <div id="scheduleList" class="item-grid"></div>
@@ -301,9 +308,11 @@
 
 <!-- ==================== 灵感页 ==================== -->
 <div id="page-idea" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2>💡 灵感脑洞</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">💡 灵感脑洞</span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-primary btn-sm" onclick="showIdeaForm()">➕ 新建</button>
   </div>
   <div class="search-bar">
@@ -318,9 +327,11 @@
 
 <!-- ==================== 日常记录页 ==================== -->
 <div id="page-daily" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-    <h2>📋 日常记录</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">📋 日常记录</span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
     <span style="display:flex;gap:6px"><button class="btn btn-danger btn-sm" id="dailyDeleteBtn" onclick="toggleDailyDelete()" style="background:#ffe8ec;color:#d4707a;margin-right:6px">➖ 删除</button><button class="btn btn-primary btn-sm" id="dailyAddBtn" onclick="showDailyForm()">➕ 记录</button></span>
   </div>
   <div class="date-nav">
@@ -334,9 +345,11 @@
 
 <!-- ==================== 笔记页 ==================== -->
 <div id="page-note" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2>📝 笔记</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">📝 笔记</span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-primary btn-sm" onclick="showNoteForm()">➕ 新建</button>
   </div>
   <div class="search-bar">
@@ -351,9 +364,11 @@
 
 <!-- ==================== 倒计时页 ==================== -->
 <div id="page-countdown" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2>⏰ 倒计时</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">⏰ 倒计时</span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-primary btn-sm" onclick="showCountdownForm()">➕ 新建</button>
   </div>
   <div id="countdownStats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
@@ -362,14 +377,14 @@
 
 <!-- ==================== 备考页 ==================== -->
 <div id="page-study" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <h2>📚 备考计划</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">📚 备考计划</span>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <button class="back-btn" onclick="studyPrevWeek()" style="font-size:13px">‹ 上周</button>
+    <button class="btn btn-sm" onclick="studyPrevWeek()" style="background:#e8f5f0;color:#3d7a5a">‹ 上周</button>
     <span id="studyWeekLabel" style="font-size:14px;font-weight:700;color:#3d5a5c"></span>
-    <button class="back-btn" onclick="studyNextWeek()" style="font-size:13px">下周 ›</button>
+    <button class="btn btn-sm" onclick="studyNextWeek()" style="background:#e8f5f0;color:#3d7a5a">下周 ›</button>
   </div>
   <div id="studyStats" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;font-size:12px"></div>
   <div id="studyDays"></div>
@@ -435,10 +450,10 @@
 
 <!-- ==================== 农场页 ==================== -->
 <div id="page-farm" class="page">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-    <h2>🌱 开心农场</h2>
-    <span id="farmHarvestAll" style="display:none"><button class="btn btn-primary btn-sm" onclick="farmHarvestAll()">🌾 一键收获</button></span>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">🌱 开心农场</span>
+    <span id="farmHarvestAll" style="display:none;margin-left:auto"><button class="btn btn-primary btn-sm" onclick="farmHarvestAll()">🌾 一键收获</button></span>
   </div>
   <div id="farmInv" class="farm-inv"></div>
   <div id="farmGrid" class="farm-grid"></div>
@@ -1971,23 +1986,29 @@ async function submitReview() {
 
 <!-- ==================== 小说列表页 ==================== -->
 <div class="page" id="page-novel">
-  <button class="back-btn" onclick="goPage('home')">← 返回主页</button>
-  <h2 style="font-size:20px;color:#3d5a5c;margin:8px 0;">📚 小说架</h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('home')">← 主页</button>
+    <span class="page-title">📚 小说架</span>
+  </div>
   <input class="search-box" id="novelSearch" placeholder="🔍 搜索小说..." oninput="filterNovels(this.value)">
   <div id="novelList"></div>
 </div>
 
 <!-- ==================== 小说章节页 ==================== -->
 <div class="page" id="page-novel-chapters">
-  <button class="back-btn" onclick="goPage('novel')">← 返回书库</button>
-  <h2 style="font-size:18px;color:#3d5a5c;margin:8px 0;" id="novelChaptersTitle"></h2>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('novel')">← 书库</button>
+    <span class="page-title" id="novelChaptersTitle"></span>
+  </div>
   <div id="chapterList"></div>
 </div>
 
 <!-- ==================== 小说阅读页 ==================== -->
 <div class="page" id="page-novel-read">
-  <button class="back-btn" onclick="goPage('novel-chapters')">← 目录</button>
-  <div class="reader-header"><h2 id="readerTitle"></h2></div>
+  <div class="top-nav">
+    <button class="back-btn" onclick="goPage('novel-chapters')">← 目录</button>
+    <span class="page-title" id="readerTitle"></span>
+  </div>
   <div class="reader-content" id="readerContent"></div>
   <div class="reader-nav">
     <button id="readerPrev" onclick="readerPrev()">← 上一章</button>
