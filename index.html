@@ -586,13 +586,14 @@ async function goPage(name, extra) { stopFarmTimer();
 async function loadMenuItems() {
   try {
     const { data } = await sb.from('menuitems').select('*').eq('visible', true).order('sort_order');
+    window._menuItemsCache = data || []; // 缓存菜单数据
     renderMenuItems(data || []);
   } catch(e) { console.error(e); }
 }
 
 function renderMenuItems(items) {
   document.getElementById('menuGrid').innerHTML = items.map(item =>
-    '<div class="menu-card" onclick="goPage(\'' + item.page + '\')">' +
+    '<div class="menu-card" data-page="' + item.page + '" onclick="goPage(\'' + item.page + '\')">' +
       '<div class="icon">' + item.icon + '</div>' +
       '<div class="name">' + item.name + '</div>' +
       '<div class="desc">' + item.description + '</div>' +
@@ -603,10 +604,13 @@ function closeOverlay(id) { document.getElementById(id).classList.remove('show')
 
 // ==================== 主页 ====================
 function updateHome() {
-  // 动态添加小说菜单（如果数据库还没有）
-  var menuGrid = document.getElementById("menuGrid");
-  if (menuGrid && !menuGrid.querySelector('[data-page="novel"]')) {
-    var card = document.createElement("div");
+  // 检查是否需要动态添加小说菜单（仅当数据库没有时）
+  const menuGrid = document.getElementById("menuGrid");
+  const existingNovel = menuGrid && menuGrid.querySelector('[data-page="novel"]');
+  const novelInDb = (window._menuItemsCache || []).some(item => item.page === 'novel');
+  
+  if (menuGrid && !existingNovel && !novelInDb) {
+    const card = document.createElement("div");
     card.className = "menu-card";
     card.setAttribute("data-page", "novel");
     card.onclick = function(){ goPage("novel"); };
