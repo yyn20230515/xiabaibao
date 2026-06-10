@@ -1727,17 +1727,6 @@ function renderFarm() {
   }).join('');
 }
 
-function getFarmTimer(plot) {
-  if (!plot.planted_at || !plot.crop) return '';
-  const c = FARM_CROPS[plot.crop];
-  if (!c) return '';
-  const elapsed = (Date.now() - new Date(plot.planted_at).getTime()) / 60000;
-  const remain = Math.max(0, c.time - elapsed);
-  if (remain <= 0) return '';
-  if (remain >= 60) return Math.floor(remain/60) + 'h' + Math.floor(remain%60) + 'm';
-  return Math.ceil(remain) + 'm';
-}
-
 function farmClickPlot(idx) {
   const plot = (_cache.farmPlots || []).find(p => p.plot_index === idx);
   if (!plot) return;
@@ -1928,6 +1917,7 @@ async function checkFarmReady() {
 
 function getFarmTimer(plot) {
   if (!plot.planted_at || !plot.crop) return '';
+  if (!plot.watered_at) return ''; // 没浇水不计时
   var c = FARM_CROPS[plot.crop];
   if (!c) return '';
   var elapsed = (Date.now() - new Date(plot.planted_at).getTime()) / 60000;

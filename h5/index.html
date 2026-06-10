@@ -1626,6 +1626,7 @@ function renderFarm() {
 
 function getFarmTimer(plot) {
   if (!plot.planted_at || !plot.crop) return '';
+  if (!plot.watered_at) return ''; // 没浇水不计时
   var c = FARM_CROPS[plot.crop];
   if (!c) return '';
   var elapsed = (Date.now() - new Date(plot.planted_at).getTime()) / 60000;
@@ -1780,11 +1781,6 @@ async function farmHarvestAll() {
   if (!confirm('一键收获 ' + ready.length + ' 块地，获得 ' + totalCoins + ' 金币？')) return;
   for (var pi = 0; pi < ready.length; pi++) {
     var plot = ready[pi];
-    var invItem = (_cache.farmInv || []).find(function(i) { return i.crop === plot.crop; });
-    if (invItem) {
-      await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', plot.crop);
-      invItem.count += 1;
-    }
     await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty', watered_at: null, fertilized_at: null }).eq('plot_index', plot.plot_index);
     plot.crop = null; plot.planted_at = null; plot.status = 'empty'; plot.watered_at = null; plot.fertilized_at = null;
   }
