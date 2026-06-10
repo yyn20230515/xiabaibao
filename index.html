@@ -96,7 +96,7 @@
 .date-nav button:hover { background:#e8f5f0; }
 .date-nav button:disabled { opacity:0.3; cursor:default; }
 .date-nav .date-label { font-size:13px; color:#3d5a5c; font-weight:600; min-width:120px; text-align:center; }
-.date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:4px;\n  /* 🐣 农场 */\n  .farm-grid { display: flex !important; flex-wrap: wrap !important; gap: 6px; width: 100%; min-height: 200px; }\n  \n  .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 65px; }\n  .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }\n  .farm-plot .emoji { font-size: 28px; line-height: 1; }\n  .farm-plot .label { font-size: 11px; color: #666; margin-top: 2px; }\n  .farm-plot .timer { font-size: 10px; color: #999; position: absolute; bottom: 3px; right: 5px; }\n  .farm-plot.ready { border-color: #ffd700; background: #fffbe6; animation: farmPulse 1s ease-in-out infinite; }\n  .farm-plot.ready .emoji { font-size: 32px; }\n  .farm-plot.empty { border-style: dashed; border-color: #b8d8b8; background: #f0faf0; }\n  .farm-plot.empty .emoji { font-size: 26px; }\n  @keyframes farmPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,215,0,0); } }\n  .farm-inv { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }\n  .farm-inv-item { background: #f8fcfb; border: 1px solid #d0e2dc; border-radius: 8px; padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px; }\n  .farm-inv-item .count { font-weight: 700; color: #3d5a5c; }\n  .farm-empty { text-align: center; color: #a0b8b0; padding: 20px; font-size: 13px; }\n  .seed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 0; }\n  .seed-card { background: #f8fcfb; border: 1px solid #d0e2dc; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all .2s; }\n  .seed-card:hover { background: #e4f4e4; border-color: #89d4b6; }\n  .seed-card.disabled { opacity: .4; cursor: default; }\n  .seed-card .emoji { font-size: 24px; }\n  .seed-card .name { font-size: 14px; font-weight: 600; color:#3d5a5c; }\n  .seed-card .info { font-size: 11px; color:#999; margin-top:2px; }\n  .seed-card .owned { font-size: 11px; color:#89d4b6; margin-top:2px; }\n  @media (max-width: 600px) {\n    .farm-grid { gap: 5px; }\n    .farm-plot { min-height: 50px; font-size: 11px; }\n    .farm-plot .emoji { font-size: 22px; }\n    .farm-plot.ready .emoji { font-size: 26px; }\n    .farm-plot .timer { font-size: 9px; }\n    .seed-grid { grid-template-columns: 1fr 1fr; gap: 6px; }\n  } padding:2px 6px; width:110px; text-align:center; cursor:pointer; }
+.date-nav .date-input { font-size:12px; border:1px solid #d0e2dc; border-radius:4px;\n  /* 🐣 农场 */\n  .farm-grid { display: flex !important; flex-wrap: wrap !important; gap: 6px; width: 100%; min-height: 200px; }\n  \n  .farm-plot { aspect-ratio: 1; background: #f0f7f0; border: 2px solid #d4e8d4; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: all .2s; position: relative; min-height: 65px; }\n  .farm-plot:hover { background: #e4f4e4; transform: scale(1.05); }\n  .farm-plot .emoji { font-size: 28px; line-height: 1; }\n  .farm-plot .label { font-size: 11px; color: #666; margin-top: 2px; }\n  .farm-plot .timer { font-size: 10px; color: #999; position: absolute; bottom: 3px; right: 5px; }\n  .farm-plot.ready { border-color: #ffd700; background: #fffbe6; animation: farmPulse 1s ease-in-out infinite; }\n  .farm-plot.ready .emoji { font-size: 32px; }\n  .farm-plot.empty { border-style: dashed; border-color: #b8d8b8; background: #f0faf0; }\n  .farm-plot.empty .emoji { font-size: 26px; }\n  .farm-plot.need-water { border-color: #64b5f6; background: #e3f2fd; }\n  .farm-plot.can-fert { border-color: #f4a460; background: #fff8f0; }\n  .farm-badge { position: absolute; top: 2px; left: 2px; font-size: 12px; z-index: 2; }\n  .farm-badge.water { animation: badgebounce 1.5s ease-in-out infinite; }\n  .farm-badge.fert { animation: badgebounce 2s ease-in-out infinite; }\n  @keyframes badgebounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }\n  @keyframes farmPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,215,0,0); } }\n  .farm-inv { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }\n  .farm-inv-item { background: #f8fcfb; border: 1px solid #d0e2dc; border-radius: 8px; padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px; }\n  .farm-inv-item .count { font-weight: 700; color: #3d5a5c; }\n  .farm-empty { text-align: center; color: #a0b8b0; padding: 20px; font-size: 13px; }\n  .seed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 0; }\n  .seed-card { background: #f8fcfb; border: 1px solid #d0e2dc; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all .2s; }\n  .seed-card:hover { background: #e4f4e4; border-color: #89d4b6; }\n  .seed-card.disabled { opacity: .4; cursor: default; }\n  .seed-card .emoji { font-size: 24px; }\n  .seed-card .name { font-size: 14px; font-weight: 600; color:#3d5a5c; }\n  .seed-card .info { font-size: 11px; color:#999; margin-top:2px; }\n  .seed-card .owned { font-size: 11px; color:#89d4b6; margin-top:2px; }\n  @media (max-width: 600px) {\n    .farm-grid { gap: 5px; }\n    .farm-plot { min-height: 50px; font-size: 11px; }\n    .farm-plot .emoji { font-size: 22px; }\n    .farm-plot.ready .emoji { font-size: 26px; }\n    .farm-plot .timer { font-size: 9px; }\n    .seed-grid { grid-template-columns: 1fr 1fr; gap: 6px; }\n  } padding:2px 6px; width:110px; text-align:center; cursor:pointer; }
 @media (max-width: 600px) {
   .date-nav .date-label { font-size:14px; min-width:140px; }
   .date-nav button { font-size:16px; padding:4px 14px; }
@@ -454,6 +454,7 @@
     <button class="back-btn" onclick="goPage('home')">← 主页</button>
     <span class="page-title">🌱 开心农场</span>
     <span id="farmHarvestAll" style="display:none;margin-left:auto"><button class="btn btn-primary btn-sm" onclick="farmHarvestAll()">🌾 一键收获</button></span>
+    <button class="btn btn-sm" onclick="farmOpenShop()" style="background:#fff3e0;color:#e65100;margin-left:8px">🛒 商店</button>
   </div>
   <div id="farmInv" class="farm-inv"></div>
   <div id="farmGrid" class="farm-grid"></div>
@@ -477,6 +478,23 @@
     <p id="farmHarvestDesc" style="font-size:13px;color:#666;margin-bottom:10px"></p>
     <button class="btn btn-primary btn-sm" onclick="farmDoHarvest()" style="width:100%">🌾 收获！</button>
     <button class="btn btn-sm" onclick="closeOverlay('farmHarvestForm')" style="background:#eee;width:100%;margin-top:6px">再看看</button>
+  </div>
+</div>
+
+<!-- 商店弹窗 -->
+<div class="overlay" id="farmShopForm">
+  <div class="overlay-content" style="max-width:380px;max-height:80vh;overflow-y:auto">
+    <h3>🛒 农场商店</h3>
+    <div style="font-size:16px;font-weight:700;color:#3d5a5c;margin-bottom:12px;text-align:center">💰 <span id="farmShopCoins">100</span> 金币</div>
+    <div style="margin-bottom:12px">
+      <h4 style="font-size:14px;color:#3d5a5c;margin-bottom:6px">🌰 购买种子</h4>
+      <div id="farmShopBuyGrid" class="seed-grid"></div>
+    </div>
+    <div style="margin-bottom:12px;border-top:1px solid #e8f5f0;padding-top:12px">
+      <h4 style="font-size:14px;color:#3d5a5c;margin-bottom:6px">💵 出售作物</h4>
+      <div id="farmShopSellGrid" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <button class="btn btn-sm" onclick="closeOverlay('farmShopForm')" style="background:#eee;width:100%;margin-top:6px">关闭</button>
   </div>
 </div>
 <!-- ==================== 弹窗：笔记表单 ==================== -->
@@ -1594,11 +1612,19 @@ loadAllData();
 
 // ==================== 农场模块 ====================
 const FARM_CROPS = {
-  carrot: { name: '小萝卜', emoji: '🥕', time: 5, desc: '5分钟' },
-  cabbage: { name: '白菜', emoji: '🥬', time: 15, desc: '15分钟' },
-  tomato: { name: '番茄', emoji: '🍅', time: 30, desc: '30分钟' },
-  strawberry: { name: '草莓', emoji: '🍓', time: 60, desc: '1小时' },
-  herb: { name: '仙草', emoji: '🌿', time: 120, desc: '2小时' }
+  carrot: { name: '小萝卜', emoji: '🥕', time: 5, desc: '5分钟', sellPrice: 10 },
+  cabbage: { name: '白菜', emoji: '🥬', time: 15, desc: '15分钟', sellPrice: 20 },
+  tomato: { name: '番茄', emoji: '🍅', time: 30, desc: '30分钟', sellPrice: 35 },
+  strawberry: { name: '草莓', emoji: '🍓', time: 60, desc: '1小时', sellPrice: 60 },
+  herb: { name: '仙草', emoji: '🌿', time: 120, desc: '2小时', sellPrice: 100 },
+  sunflower: { name: '向日葵', emoji: '🌻', time: 180, desc: '3小时', sellPrice: 50 },
+  corn: { name: '玉米', emoji: '🌽', time: 240, desc: '4小时', sellPrice: 70 },
+  pumpkin: { name: '南瓜', emoji: '🎃', time: 360, desc: '6小时', sellPrice: 100 },
+  grape: { name: '葡萄', emoji: '🍇', time: 480, desc: '8小时', sellPrice: 150 },
+  watermelon: { name: '西瓜', emoji: '🍉', time: 720, desc: '12小时', sellPrice: 200 },
+  pineapple: { name: '菠萝', emoji: '🍍', time: 1080, desc: '18小时', sellPrice: 300 },
+  eggplant: { name: '茄子', emoji: '🍆', time: 1440, desc: '24小时', sellPrice: 400 },
+  cherry: { name: '樱桃', emoji: '🍒', time: 1800, desc: '30小时', sellPrice: 500 }
 };
 const FARM_TOTAL = 25;
 let _farmTimer = null;
@@ -1608,16 +1634,19 @@ let _farmPendingHarvest = null; // { plot_idx, crop_key }
 async function loadFarm() {
   if (_farmTimer) clearInterval(_farmTimer);
   try {
-    const [plotsRes, invRes] = await Promise.all([
+    const [plotsRes, invRes, coinsRes] = await Promise.all([
       sb.from('farm_plots').select('*').order('plot_index'),
-      sb.from('farm_inventory').select('*')
+      sb.from('farm_inventory').select('*'),
+      sb.from('farm_coins').select('*').single()
     ]);
     _cache.farmPlots = plotsRes.data || [];
     _cache.farmInv = invRes.data || [];
+    _cache.farmCoins = coinsRes?.balance || 100;
   } catch(e) {
     console.error('Farm load error', e);
     _cache.farmPlots = [];
     _cache.farmInv = [];
+    _cache.farmCoins = 100;
   }
   renderFarm();
   checkFarmReady();
@@ -1630,9 +1659,14 @@ function renderFarm() {
   const invEl = document.getElementById('farmInv');
   const empty = document.getElementById('farmEmpty');
 
+  // 渲染金币
+  if (invEl) {
+    invEl.innerHTML = '<span class="farm-inv-item" style="font-size:14px;">💰 ' + _cache.farmCoins + ' 金币</span>';
+  }
+
   // 渲染仓库
   if (invEl) {
-    invEl.innerHTML = Object.entries(FARM_CROPS).map(([key, c]) => {
+    invEl.innerHTML += Object.entries(FARM_CROPS).map(([key, c]) => {
       const item = inv.find(i => i.crop === key);
       const count = item ? item.count : 0;
       return count > 0 || key === 'carrot' || key === 'cabbage' || key === 'tomato'
@@ -1658,7 +1692,7 @@ function renderFarm() {
   grid.innerHTML = plots.map(p => {
     const idx = p.plot_index;
     const status = p.status || 'empty';
-    let emoji = '➕', label = '空地', timer = '', cls = 'empty';
+    let emoji = '➕', label = '空地', timer = '', cls = 'empty', badge = '';
     if (status === 'growing' && p.crop) {
       const c = FARM_CROPS[p.crop];
       if (c) {
@@ -1666,6 +1700,14 @@ function renderFarm() {
         label = c.name;
         timer = getFarmTimer(p);
         cls = '';
+        if (!p.watered_at) {
+          badge = '<span class="farm-badge water">💧</span>';
+          label += ' 待浇水';
+          cls += ' need-water';
+        } else if (!p.fertilized_at) {
+          badge = '<span class="farm-badge fert">✨</span>';
+          cls += ' can-fert';
+        }
       }
     } else if (status === 'ready' && p.crop) {
       const c = FARM_CROPS[p.crop];
@@ -1677,6 +1719,7 @@ function renderFarm() {
       }
     }
     return '<div class="farm-plot ' + cls + '" style="width:18%;flex:none;box-sizing:border-box;margin:1%" onclick="farmClickPlot(' + idx + ')" title="地块' + (idx+1) + '">'
+      + badge
       + '<span class="emoji">' + emoji + '</span>'
       + '<span class="label">' + label + '</span>'
       + (timer ? '<span class="timer">' + timer + '</span>' : '')
@@ -1705,8 +1748,23 @@ function farmClickPlot(idx) {
     const c = FARM_CROPS[plot.crop];
     document.getElementById('farmHarvestEmoji').textContent = c ? c.emoji : '🌾';
     document.getElementById('farmHarvestTitle').textContent = c ? c.name + '成熟啦！' : '收获！';
-    document.getElementById('farmHarvestDesc').textContent = '点击收获这棵' + (c ? c.name : '作物');
+    document.getElementById('farmHarvestDesc').textContent = '收获这棵' + (c ? c.name : '作物') + '，获得' + (c ? c.sellPrice : 0) + '金币';
     document.getElementById('farmHarvestForm').classList.add('show');
+    return;
+  }
+  // 浇水（未浇水）
+  if (st === 'growing' && plot.crop && !plot.watered_at) {
+    if (confirm('要给这块地浇水吗？浇水后作物才会开始生长～')) {
+      farmWater(idx);
+    }
+    return;
+  }
+  // 施肥（生长中）
+  if (st === 'growing' && plot.crop && plot.watered_at && !plot.fertilized_at) {
+    const c = FARM_CROPS[plot.crop];
+    if (confirm('要施肥吗？施肥可以缩短剩余生长时间10%～')) {
+      farmFertilize(idx);
+    }
     return;
   }
   // 锄地（生长中）
@@ -1729,7 +1787,7 @@ function farmClickPlot(idx) {
       + (owned > 0 ? ' onclick="farmPlant(' + idx + ',\'' + key + '\')"' : '') + '>'
       + '<div class="emoji">' + c.emoji + '</div>'
       + '<div class="name">' + c.name + '</div>'
-      + '<div class="info">\u23F1 ' + c.desc + '</div>'
+      + '<div class="info">\u23F1 ' + c.desc + ' | 售价' + c.sellPrice + '金币</div>'
       + (owned > 0 ? '<div class="owned">拥有 \u00D7' + owned + '</div>' : '<div class="owned" style="color:#ccc">暂无</div>')
       + '</div>';
   }).join('');
@@ -1739,12 +1797,33 @@ function farmClickPlot(idx) {
 
 async function farmRemoveCrop(idx) {
   try {
-    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', idx);
+    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty', watered_at: null, fertilized_at: null }).eq('plot_index', idx);
     const plot = _cache.farmPlots.find(function(p) { return p.plot_index === idx; });
-    if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; }
+    if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; plot.watered_at = null; plot.fertilized_at = null; }
     renderFarm();
   } catch(e) { console.error(e); alert('锄地失败'); }
 }
+
+async function farmWater(idx) {
+  try {
+    const now = new Date().toISOString();
+    await sb.from('farm_plots').update({ watered_at: now }).eq('plot_index', idx);
+    const plot = _cache.farmPlots.find(p => p.plot_index === idx);
+    if (plot) { plot.watered_at = now; }
+    renderFarm();
+  } catch(e) { console.error(e); alert('浇水失败'); }
+}
+
+async function farmFertilize(idx) {
+  try {
+    const now = new Date().toISOString();
+    await sb.from('farm_plots').update({ fertilized_at: now }).eq('plot_index', idx);
+    const plot = _cache.farmPlots.find(p => p.plot_index === idx);
+    if (plot) { plot.fertilized_at = now; }
+    renderFarm();
+  } catch(e) { console.error(e); alert('施肥失败'); }
+}
+
 async function farmPlant(idx, cropKey) {
   const c = FARM_CROPS[cropKey];
   if (!c) return;
@@ -1752,19 +1831,28 @@ async function farmPlant(idx, cropKey) {
   try {
     // 扣库存
     const invItem = (_cache.farmInv || []).find(i => i.crop === cropKey);
-    if (!invItem || invItem.count <= 0) { alert('种子不够啦！'); return; }
+    if (!invItem || invItem.count <= 0) { alert('种子不够啦！去商店买吧～'); return; }
     await sb.from('farm_inventory').update({ count: invItem.count - 1 }).eq('crop', cropKey);
     invItem.count -= 1;
-    // 种地
+    // 种地（需要浇水后才开始生长）
     const now = new Date().toISOString();
-    await sb.from('farm_plots').update({ crop: cropKey, planted_at: now, status: 'growing' }).eq('plot_index', idx);
+    await sb.from('farm_plots').update({ crop: cropKey, planted_at: now, status: 'growing', watered_at: null, fertilized_at: null }).eq('plot_index', idx);
     const plot = _cache.farmPlots.find(p => p.plot_index === idx);
-    if (plot) { plot.crop = cropKey; plot.planted_at = now; plot.status = 'growing'; }
+    if (plot) { plot.crop = cropKey; plot.planted_at = now; plot.status = 'growing'; plot.watered_at = null; plot.fertilized_at = null; }
     renderFarm();
   } catch(e) {
     console.error('种植失败', e);
     alert('种植失败，请重试');
   }
+}
+
+// 更新金币余额
+async function farmUpdateCoins(amount) {
+  _cache.farmCoins = Math.max(0, _cache.farmCoins + amount);
+  try {
+    await sb.from('farm_coins').upsert({ id: 1, balance: _cache.farmCoins, updated_at: new Date().toISOString() });
+  } catch(e) { console.error('金币更新失败', e); }
+  renderFarm();
 }
 
 async function farmDoHarvest() {
@@ -1773,16 +1861,14 @@ async function farmDoHarvest() {
   _farmPendingHarvest = null;
   closeOverlay('farmHarvestForm');
   try {
-    // 收获：加库存（收获得到2个作物）
-    const invItem = (_cache.farmInv || []).find(i => i.crop === crop_key);
-    if (invItem) {
-      await sb.from('farm_inventory').update({ count: invItem.count + 2 }).eq('crop', crop_key);
-      invItem.count += 2;
-    }
+    const c = FARM_CROPS[crop_key];
+    const coins = c ? c.sellPrice : 0;
+    // 收获：加金币
+    await farmUpdateCoins(coins);
     // 清空地
-    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', plot_idx);
+    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty', watered_at: null, fertilized_at: null }).eq('plot_index', plot_idx);
     const plot = _cache.farmPlots.find(p => p.plot_index === plot_idx);
-    if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; }
+    if (plot) { plot.crop = null; plot.planted_at = null; plot.status = 'empty'; plot.watered_at = null; plot.fertilized_at = null; }
     renderFarm();
   } catch(e) {
     console.error('收获失败', e);
@@ -1793,16 +1879,17 @@ async function farmDoHarvest() {
 async function farmHarvestAll() {
   const ready = (_cache.farmPlots || []).filter(p => p.status === 'ready');
   if (!ready.length) return;
-  if (!confirm('一键收获 ' + ready.length + ' 块地？')) return;
-  for (const plot of ready) {
-    const invItem = (_cache.farmInv || []).find(i => i.crop === plot.crop);
-    if (invItem) {
-      await sb.from('farm_inventory').update({ count: invItem.count + 2 }).eq('crop', plot.crop);
-      invItem.count += 2;
-    }
-    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty' }).eq('plot_index', plot.plot_index);
-    plot.crop = null; plot.planted_at = null; plot.status = 'empty';
+  let totalCoins = 0;
+  for (const p of ready) {
+    const c = FARM_CROPS[p.crop];
+    if (c) totalCoins += c.sellPrice;
   }
+  if (!confirm('一键收获 ' + ready.length + ' 块地，获得 ' + totalCoins + ' 金币？')) return;
+  for (const plot of ready) {
+    await sb.from('farm_plots').update({ crop: null, planted_at: null, status: 'empty', watered_at: null, fertilized_at: null }).eq('plot_index', plot.plot_index);
+    plot.crop = null; plot.planted_at = null; plot.status = 'empty'; plot.watered_at = null; plot.fertilized_at = null;
+  }
+  await farmUpdateCoins(totalCoins);
   renderFarm();
 }
 
@@ -1822,11 +1909,13 @@ async function checkFarmReady() {
   const plots = _cache.farmPlots || [];
   let changed = false;
   for (const plot of plots) {
-    if (plot.status === 'growing' && plot.planted_at && plot.crop) {
+    if (plot.status === 'growing' && plot.planted_at && plot.crop && plot.watered_at) {
       const c = FARM_CROPS[plot.crop];
       if (!c) continue;
       const elapsed = (Date.now() - new Date(plot.planted_at).getTime()) / 60000;
-      if (elapsed >= c.time) {
+      // 施肥后生长时间缩短10%
+      const effectiveTime = plot.fertilized_at ? c.time * 0.9 : c.time;
+      if (elapsed >= effectiveTime) {
         // 成熟了
         await sb.from('farm_plots').update({ status: 'ready' }).eq('plot_index', plot.plot_index);
         plot.status = 'ready';
@@ -1837,8 +1926,84 @@ async function checkFarmReady() {
   if (changed) renderFarm();
 }
 
+function getFarmTimer(plot) {
+  if (!plot.planted_at || !plot.crop) return '';
+  var c = FARM_CROPS[plot.crop];
+  if (!c) return '';
+  var elapsed = (Date.now() - new Date(plot.planted_at).getTime()) / 60000;
+  var effectiveTime = plot.fertilized_at ? c.time * 0.9 : c.time;
+  var remain = Math.max(0, effectiveTime - elapsed);
+  if (remain <= 0) return '';
+  if (remain >= 60) return Math.floor(remain/60) + 'h' + Math.floor(remain%60) + 'm';
+  return Math.ceil(remain) + 'm';
+}
+
 function stopFarmTimer() {
   if (_farmTimer) { clearInterval(_farmTimer); _farmTimer = null; }
+}
+
+// 🛒 农场商店
+function farmOpenShop() {
+  document.getElementById('farmShopCoins').textContent = _cache.farmCoins;
+  // 购买种子列表
+  var buyGrid = document.getElementById('farmShopBuyGrid');
+  buyGrid.innerHTML = Object.entries(FARM_CROPS).map(([key, c]) => {
+    var seedPrice = Math.ceil(c.sellPrice * 0.6); // 种子价格是售价的60%
+    return '<div class="seed-card" onclick="farmBuySeed(\'' + key + '\',' + seedPrice + ')">'
+      + '<div class="emoji">' + c.emoji + '</div>'
+      + '<div class="name">' + c.name + '</div>'
+      + '<div class="info">' + c.desc + '</div>'
+      + '<div class="owned" style="color:#e65100">💰' + seedPrice + ' 金币/颗</div>'
+      + '</div>';
+  }).join('');
+
+  // 出售作物列表
+  var sellGrid = document.getElementById('farmShopSellGrid');
+  var inv = _cache.farmInv || [];
+  sellGrid.innerHTML = inv.filter(i => i.count > 0).map(i => {
+    var c = FARM_CROPS[i.crop];
+    if (!c) return '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fcfb;border-radius:8px;padding:8px 12px">'
+      + '<span>' + c.emoji + ' ' + c.name + ' <b>×' + i.count + '</b></span>'
+      + '<span style="display:flex;gap:6px;align-items:center">'
+      + '<span style="font-size:13px;color:#e65100">' + c.sellPrice + '金币/个</span>'
+      + '<button class="btn btn-sm" onclick="farmSellCrop(\'' + i.crop + '\',1)" style="background:#fff3e0;color:#e65100">卖1个</button>'
+      + '<button class="btn btn-sm" onclick="farmSellCrop(\'' + i.crop + '\',' + i.count + ')" style="background:#ffe0b2;color:#bf360c">全卖</button>'
+      + '</span></div>';
+  }).join('');
+  if (!sellGrid.innerHTML) sellGrid.innerHTML = '<div style="text-align:center;color:#aabfbb;padding:12px">暂无作物可卖</div>';
+
+  document.getElementById('farmShopForm').classList.add('show');
+}
+
+async function farmBuySeed(cropKey, price) {
+  if (_cache.farmCoins < price) { alert('金币不够啦！'); return; }
+  try {
+    var invItem = (_cache.farmInv || []).find(i => i.crop === cropKey);
+    if (invItem) {
+      await sb.from('farm_inventory').update({ count: invItem.count + 1 }).eq('crop', cropKey);
+      invItem.count += 1;
+    } else {
+      await sb.from('farm_inventory').insert({ crop: cropKey, count: 1 });
+      _cache.farmInv.push({ crop: cropKey, count: 1 });
+    }
+    await farmUpdateCoins(-price);
+    farmOpenShop(); // 刷新商店界面
+  } catch(e) { console.error('购买失败', e); alert('购买失败'); }
+}
+
+async function farmSellCrop(cropKey, count) {
+  var invItem = (_cache.farmInv || []).find(i => i.crop === cropKey);
+  if (!invItem || invItem.count < count) { alert('作物不够啦！'); return; }
+  try {
+    var c = FARM_CROPS[cropKey];
+    if (!c) return;
+    var coins = c.sellPrice * count;
+    await sb.from('farm_inventory').update({ count: invItem.count - count }).eq('crop', cropKey);
+    invItem.count -= count;
+    await farmUpdateCoins(coins);
+    farmOpenShop(); // 刷新商店界面
+  } catch(e) { console.error('出售失败', e); alert('出售失败'); }
 }
 
 // 📚 小说阅读
