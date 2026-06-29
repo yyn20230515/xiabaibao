@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>虾虾写作助手 🦐</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f0eb; color: #333; height: 100vh; overflow: hidden; }
+
+/* ===== 密码页 ===== */
+#loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg,#e8f5e9,#c8e6c9); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+#loginOverlay.hidden { display: none; }
+.login-box { background: #fff; border-radius: 20px; padding: 40px; width: 360px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.1); }
+.login-box h1 { font-size: 28px; color: #2e7d32; margin-bottom: 6px; }
+.login-box p { color: #888; font-size: 14px; margin-bottom: 24px; }
+.login-box input { width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; outline: none; transition: border .2s; }
+.login-box input:focus { border-color: #4caf50; }
+.login-box .err { color: #e53935; font-size: 13px; margin-top: 10px; display: none; }
+.login-box .err.show { display: block; }
+.login-box button { margin-top: 16px; width: 100%; padding: 12px; background: #4caf50; color: #fff; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; transition: background .2s; }
+.login-box button:hover { background: #388e3c; }
+
+/* ===== 主布局 ===== */
+#app { display: none; height: 100vh; }
+#app.show { display: flex; }
+
+/* 左栏 - 对话列表 */
+.sidebar { width: 240px; min-width: 240px; background: #fff; border-right: 1px solid #e0ddd8; display: flex; flex-direction: column; }
+.sidebar-header { padding: 16px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
+.sidebar-header h2 { font-size: 16px; color: #2e7d32; }
+.sidebar-header button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0ddd8; background: #f5f0eb; cursor: pointer; font-size: 18px; line-height: 1; transition: background .2s; }
+.sidebar-header button:hover { background: #e0ddd8; }
+.conv-list { flex: 1; overflow-y: auto; padding: 8px; }
+.conv-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #555; margin-bottom: 4px; transition: background .2s; display: flex; align-items: center; justify-content: space-between; }
+.conv-item:hover { background: #f5f0eb; }
+.conv-item.active { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+.conv-item .del-btn { width: 20px; height: 20px; border-radius: 4px; border: none; background: transparent; cursor: pointer; color: #ccc; font-size: 12px; display: none; }
+.conv-item:hover .del-btn { display: block; }
+.conv-item .del-btn:hover { color: #e53935; background: #ffebee; }
+.conv-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 中栏 - 聊天 */
+.chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #faf8f5; }
+.chat-header { padding: 12px 20px; border-bottom: 1px solid #e8e5e0; background: #fff; display: flex; align-items: center; justify-content: space-between; }
+.chat-header h3 { font-size: 15px; color: #333; }
+.chat-header .hint { font-size: 12px; color: #aaa; }
+.msg-list { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.msg { margin-bottom: 16px; display: flex; }
+.msg.assistant { justify-content: flex-start; }
+.msg.user { justify-content: flex-end; }
+.msg-bubble { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.msg.assistant .msg-bubble { background: #fff; border: 1px solid #e8e5e0; border-bottom-left-radius: 4px; color: #333; }
+.msg.user .msg-bubble { background: #4caf50; color: #fff; border-bottom-right-radius: 4px; }
+.msg .time { font-size: 11px; color: #aaa; margin-top: 4px; text-align: right; }
+.msg.assistant .time { text-align: left; }
+.msg-loading .msg-bubble { background: #fff; border: 1px solid #e8e5e0; }
+.msg-loading .dots { display: inline-flex; gap: 4px; }
+.msg-loading .dots span { width: 6px; height: 6px; border-radius: 50%; background: #bbb; animation: dotPulse 1.4s infinite; }
+.msg-loading .dots span:nth-child(2) { animation-delay: .2s; }
+.msg-loading .dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes dotPulse { 0%,80%,100% { opacity: .3; } 40% { opacity: 1; } }
+.chat-input { padding: 12px 20px; border-top: 1px solid #e8e5e0; background: #fff; display: flex; gap: 8px; align-items: flex-end; }
+.chat-input textarea { flex: 1; padding: 10px 14px; border: 1px solid #e0ddd8; border-radius: 12px; resize: none; font-size: 14px; outline: none; min-height: 44px; max-height: 120px; font-family: inherit; line-height: 1.5; }
+.chat-input textarea:focus { border-color: #4caf50; }
+.chat-input .btn-group { display: flex; gap: 6px; }
+.chat-input button { padding: 10px 18px; border-radius: 12px; border: none; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background .2s; }
+.chat-input .btn-send { background: #4caf50; color: #fff; }
+.chat-input .btn-send:hover { background: #388e3c; }
+.chat-input .btn-send:disabled { background: #a5d6a7; cursor: not-allowed; }
+
+/* 右栏 - 文件管理 */
+.file-panel { width: 280px; min-width: 280px; background: #fff; border-left: 1px solid #e0ddd8; display: flex; flex-direction: column; }
+.file-header { padding: 16px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
+.file-header h2 { font-size: 16px; color: #2e7d32; }
+.file-header .actions { display: flex; gap: 6px; }
+.file-header .actions button { padding: 6px 12px; border-radius: 8px; border: 1px solid #e0ddd8; background: #f5f0eb; cursor: pointer; font-size: 12px; transition: background .2s; }
+.file-header .actions button:hover { background: #e0ddd8; }
+
+/* 文件夹列表 */
+.folder-list { padding: 8px; border-bottom: 1px solid #e8e5e0; }
+.folder-item { padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #555; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; transition: background .2s; }
+.folder-item:hover { background: #f5f0eb; }
+.folder-item.active { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+.folder-item .count { margin-left: auto; font-size: 11px; color: #aaa; }
+.folder-item .del-folder { font-size: 12px; color: #ccc; cursor: pointer; display: none; padding: 0 4px; }
+.folder-item:hover .del-folder { display: inline; }
+.folder-item .del-folder:hover { color: #e53935; }
+.add-folder { padding: 6px 10px; cursor: pointer; font-size: 13px; color: #4caf50; border-radius: 6px; }
+.add-folder:hover { background: #e8f5e9; }
+
+/* 文件列表 */
+.file-list { flex: 1; overflow-y: auto; padding: 8px; }
+.file-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; transition: background .2s; }
+.file-item:hover { background: #f5f0eb; }
+.file-item .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .fsize { font-size: 11px; color: #aaa; white-space: nowrap; }
+.file-item .fops { display: none; gap: 4px; }
+.file-item:hover .fops { display: flex; }
+.file-item .fops button { padding: 2px 6px; border-radius: 4px; border: none; background: transparent; cursor: pointer; font-size: 12px; color: #888; }
+.file-item .fops button:hover { background: #e8e5e0; color: #333; }
+
+/* 文件预览弹窗 */
+#filePreview { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; display: none; justify-content: center; align-items: center; }
+#filePreview.show { display: flex; }
+.preview-box { background: #fff; border-radius: 16px; width: 90%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.preview-header { padding: 16px 20px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
+.preview-header h3 { font-size: 16px; color: #333; }
+.preview-header .close-preview { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; cursor: pointer; font-size: 20px; }
+.preview-header .close-preview:hover { background: #f5f0eb; }
+.preview-body { flex: 1; padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+.preview-actions { padding: 12px 20px; border-top: 1px solid #e8e5e0; display: flex; gap: 8px; justify-content: flex-end; }
+.preview-actions button { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; transition: background .2s; }
+.preview-actions .btn-download { background: #4caf50; color: #fff; }
+.preview-actions .btn-download:hover { background: #388e3c; }
+.preview-actions .btn-ai { background: #2196f3; color: #fff; }
+.preview-actions .btn-ai:hover { background: #1976d2; }
+
+/* 上传进度 */
+#uploadProgress { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; padding: 16px 24px; box-shadow: 0 4px 20px rgba(0,0,0,.15); display: none; z-index: 1100; min-width: 300px; }
+#uploadProgress.show { display: block; }
+#uploadProgress .up-title { font-size: 13px; color: #555; margin-bottom: 8px; }
+#uploadProgress .up-bar { height: 6px; background: #e8e5e0; border-radius: 3px; overflow: hidden; }
+#uploadProgress .up-bar div { height: 100%; background: #4caf50; border-radius: 3px; transition: width .3s; }
+#uploadProgress .up-text { font-size: 12px; color: #888; margin-top: 6px; text-align: center; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 900px) {
+  .file-panel { display: none; }
+  .file-panel.show { display: flex; position: fixed; right: 0; top: 0; height: 100vh; width: 300px; z-index: 500; box-shadow: -4px 0 20px rgba(0,0,0,.1); }
+}
+@media (max-width: 640px) {
+  .sidebar { width: 180px; min-width: 180px; }
+  .chat-area { flex: 1; }
+  .chat-input { flex-wrap: wrap; }
+  .chat-input textarea { min-width: 100%; }
+  .chat-input .btn-group { width: 100%; justify-content: flex-end; }
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #bbb; }
+</style>
+</head>
+<body>
+
+<!-- ===== 密码登录 ===== -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <h1>🦐 虾虾写作助手</h1>
+    <p>给妈妈的专属 AI 写作小帮手</p>
+    <input type="password" id="loginPwd" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="loginApiKey" placeholder="DeepSeek API Key" autocomplete="off" style="margin-top:10px" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="loginErr">密码或API Key不对，再试试吧</div>
+    <button onclick="doLogin()">进入 ✨</button>
+  </div>
+</div>
+
+<!-- ===== 主应用 ===== -->
+<div id="app">
+
+  <!-- 左栏：对话列表 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>🦐 对话</h2>
+      <button onclick="newConversation()" title="新建对话">＋</button>
+    </div>
+    <div class="conv-list" id="convList"></div>
+  </div>
+
+  <!-- 中栏：聊天 -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <h3 id="chatTitle">选择或新建一个对话</h3>
+      <span class="hint">💡 选中文件可续写/扩写</span>
+    </div>
+    <div class="msg-list" id="msgList"></div>
+    <div class="chat-input">
+      <textarea id="chatInput" placeholder="输入你的想法..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+      <div class="btn-group">
+        <button class="btn-send" id="btnSend" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右栏：文件管理 -->
+  <div class="file-panel">
+    <div class="file-header">
+      <h2>📁 文件</h2>
+      <div class="actions">
+        <button onclick="showNewFolder()">+ 文件夹</button>
+        <button onclick="uploadFile()">📤 上传</button>
+        <input type="file" id="fileInput" accept=".txt,.md" style="display:none" onchange="handleFileSelect(event)">
+      </div>
+    </div>
+    <div class="folder-list" id="folderList"></div>
+    <div class="file-list" id="fileList"></div>
+  </div>
+</div>
+
+<!-- ===== 文件预览弹窗 ===== -->
+<div id="filePreview">
+  <div class="preview-box">
+    <div class="preview-header">
+      <h3 id="previewTitle">文件</h3>
+      <button class="close-preview" onclick="closePreview()">✕</button>
+    </div>
+    <div class="preview-body" id="previewBody"></div>
+    <div class="preview-actions">
+      <button onclick="openFileAiContinue()" class="btn-ai">✍️ 续写</button>
+      <button onclick="openFileAiExpand()" class="btn-ai">🔍 扩写</button>
+      <button onclick="downloadPreview()" class="btn-download">⬇️ 下载</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 上传进度 ===== -->
+<div id="uploadProgress">
+  <div class="up-title" id="upTitle">正在上传...</div>
+  <div class="up-bar"><div id="upBarInner" style="width:0%"></div></div>
+  <div class="up-text" id="upText">0%</div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const PASSWORD = 'xiaoxia';
+
+const SUPABASE_URL = 'https://bxmdfgivaqqpxtjilxnj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4bWRmZ2l2YXFxcHh0amlseG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjY3NjMsImV4cCI6MjA5NTMwMjc2M30.VUbG7bnXzNeaIfTT5PsSpPIy__IEONbZBHLRen3iDPY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== 阿夏系统提示 =====
+const SYSTEM_PROMPT = `你是虾虾（阿夏），一个温暖可爱的 AI 写作助手。你的主要任务是帮用户（一位正在写小说的作者）创作和完善小说。
+
+你的风格：
+1. 温暖鼓励，对用户的每一段文字都认真回应
+2. 写小说时文笔优美、描写细腻
+3. 遇到用户询问写作建议时给出具体可操作的建议
+4. 用户上传文件时，先阅读内容再回应
+5. 续写时要保持用户原有的风格和情节走向
+
+创作原则：
+- 不改动用户已有的核心设定
+- 续写前先确认用户的创作意图
+- 描写丰富但不啰嗦
+- 角色对话要自然生动
+
+你叫阿夏，自称"虾虾"，对用户用"您"。`;
+
+// ==================== 状态 ====================
+let conversations = [];
+let currentConvId = null;
+let folders = [];
+let files = [];
+let currentFolderId = null;
+let previewFile = null;
+let isSending = false;
+
+// ===== 密码登录 =====
+let DEEPSEEK_KEY = '';
+
+function doLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  const apiKey = document.getElementById('loginApiKey').value.trim();
+  if (pwd === PASSWORD && apiKey) {
+    DEEPSEEK_KEY = apiKey;
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+    init();
+  } else {
+    document.getElementById('loginErr').classList.add('show');
+  }
+}
+
+// ===== 初始化 =====
+async function init() {
+  await loadConversations();
+  await loadFolders();
+  if (conversations.length > 0) {
+    selectConversation(conversations[0].id);
+  }
+}
+
+// ==================== 对话管理 ====================
+async function loadConversations() {
+  const { data } = await sb.from('writer_conversations').select('*').order('updated_at', { ascending: false });
+  conversations = data || [];
+  renderConversations();
+}
+
+function renderConversations() {
+  const el = document.getElementById('convList');
+  el.innerHTML = conversations.map(c => `
+    <div class="conv-item${c.id === currentConvId ? ' active' : ''}" onclick="selectConversation(${c.id})">
+      <span class="title">${escHtml(c.title)}</span>
+      <button class="del-btn" onclick="event.stopPropagation();deleteConversation(${c.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+async function newConversation() {
+  const { data } = await sb.from('writer_conversations').insert({ title: '新对话' }).select().single();
+  if (data) {
+    conversations.unshift(data);
+    selectConversation(data.id);
+  }
+}
+
+async function selectConversation(id) {
+  currentConvId = id;
+  renderConversations();
+  await loadMessages(id);
+  const conv = conversations.find(c => c.id === id);
+  document.getElementById('chatTitle').textContent = conv ? conv.title : '对话';
+}
+
+async function deleteConversation(id) {
+  if (!confirm('确定删除这个对话吗？')) return;
+  await sb.from('writer_messages').delete().eq('conversation_id', id);
+  await sb.from('writer_conversations').delete().eq('id', id);
+  conversations = conversations.filter(c => c.id !== id);
+  if (currentConvId === id) {
+    currentConvId = conversations.length > 0 ? conversations[0].id : null;
+    if (currentConvId) {
+      selectConversation(currentConvId);
+    } else {
+      document.getElementById('msgList').innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;font-size:14px">选择一个对话开始吧 📝</div>';
+      document.getElementById('chatTitle').textContent = '选择或新建一个对话';
+    }
+  } else {
+    renderConversations();
+  }
+}
+
+// ==================== 消息管理 ====================
+async function loadMessages(convId) {
+  if (!convId) return;
+  const { data } = await sb.from('writer_messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true });
+  renderMessages(data || []);
+}
+
+function renderMessages(msgs) {
+  const el = document.getElementById('msgList');
+  if (msgs.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;font-size:14px">开始对话吧！聊一聊您的小说 📖</div>';
+    return;
+  }
+  el.innerHTML = msgs.map(m => `
+    <div class="msg ${m.role}">
+      <div class="msg-bubble">${escHtml(m.content)}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ==================== AI 对话 ====================
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || isSending) return;
+
+  // 如果没选对话，自动新建
+  if (!currentConvId) {
+    await newConversation();
+    if (!currentConvId) return;
+  }
+
+  isSending = true;
+  document.getElementById('btnSend').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // 保存用户消息
+  await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: text });
+
+  // 加载历史消息给AI
+  const { data: history } = await sb.from('writer_messages').select('role,content').eq('conversation_id', currentConvId).order('created_at', { ascending: true });
+
+  // 显示加载动画
+  const msgList = document.getElementById('msgList');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg assistant msg-loading';
+  loadingDiv.innerHTML = `<div class="msg-bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
+  msgList.appendChild(loadingDiv);
+  msgList.scrollTop = msgList.scrollHeight;
+
+  // 调 AI
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history.map(h => ({ role: h.role, content: h.content }))
+  ];
+
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
+      body: JSON.stringify({ model: 'deepseek-chat', messages, stream: false, max_tokens: 4096 })
+    });
+    const json = await res.json();
+    const reply = json.choices?.[0]?.message?.content || '抱歉，虾虾没想好怎么回答 >_<';
+
+    // 保存 AI 回复
+    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: reply });
+
+    // 如果对话还是"新对话"，自动根据第一轮对话重命名
+    const conv = conversations.find(c => c.id === currentConvId);
+    if (conv && conv.title === '新对话') {
+      const newTitle = text.length > 20 ? text.slice(0, 20) + '...' : text;
+      await sb.from('writer_conversations').update({ title: newTitle }).eq('id', currentConvId);
+      conv.title = newTitle;
+      document.getElementById('chatTitle').textContent = newTitle;
+      renderConversations();
+    }
+
+    // 更新更新时间
+    await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
+
+    // 重新加载消息
+    loadingDiv.remove();
+    await loadMessages(currentConvId);
+
+  } catch (e) {
+    loadingDiv.remove();
+    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: '😅 啊，虾虾网络出问题了，再试一次吧～' });
+    await loadMessages(currentConvId);
+  }
+
+  isSending = false;
+  document.getElementById('btnSend').disabled = false;
+}
+
+// ==================== 文件管理 ====================
+async function loadFolders() {
+  const { data } = await sb.from('writer_folders').select('*').order('created_at', { ascending: true });
+  folders = data || [];
+  renderFolders();
+}
+
+async function loadFiles(folderId) {
+  let query = sb.from('writer_files').select('*');
+  if (folderId) {
+    query = query.eq('folder_id', folderId);
+  } else {
+    query = query.is('folder_id', null);
+  }
+  const { data } = await query.order('created_at', { ascending: false });
+  files = data || [];
+  renderFiles();
+}
+
+function renderFolders() {
+  const el = document.getElementById('folderList');
+  el.innerHTML = `
+    <div class="folder-item${!currentFolderId ? ' active' : ''}" onclick="selectFolder(null)">
+      📂 全部文件
+    </div>
+    ${folders.map(f => `
+      <div class="folder-item${currentFolderId === f.id ? ' active' : ''}" onclick="selectFolder(${f.id})">
+        📁 ${escHtml(f.name)}
+        <span class="del-folder" onclick="event.stopPropagation();deleteFolder(${f.id})">✕</span>
+      </div>
+    `).join('')}
+    <div class="add-folder" onclick="showNewFolder()">＋ 新建文件夹</div>
+  `;
+}
+
+async function selectFolder(id) {
+  currentFolderId = id;
+  renderFolders();
+  await loadFiles(id);
+}
+
+function showNewFolder() {
+  const name = prompt('输入文件夹名称：');
+  if (name && name.trim()) {
+    createFolder(name.trim());
+  }
+}
+
+async function createFolder(name) {
+  const { data } = await sb.from('writer_folders').insert({ name }).select().single();
+  if (data) {
+    folders.push(data);
+    selectFolder(data.id);
+  }
+}
+
+async function deleteFolder(id) {
+  if (!confirm('删除文件夹不会删除其中的文件。确定删除吗？')) return;
+  await sb.from('writer_folders').delete().eq('id', id);
+  folders = folders.filter(f => f.id !== id);
+  if (currentFolderId === id) selectFolder(null);
+  else renderFolders();
+}
+
+function renderFiles() {
+  const el = document.getElementById('fileList');
+  if (files.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">还没有文件 📭</div>';
+    return;
+  }
+  el.innerHTML = files.map(f => `
+    <div class="file-item" onclick="previewFileById(${f.id})">
+      <span>📄</span>
+      <span class="fname">${escHtml(f.name)}</span>
+      <span class="fsize">${formatSize(f.size)}</span>
+      <span class="fops">
+        <button onclick="event.stopPropagation();deleteFile(${f.id})" title="删除">🗑️</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+// ===== 文件上传（含断点续传） =====
+function uploadFile() {
+  document.getElementById('fileInput').click();
+}
+
+async function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  // 只接受文本文件
+  if (!file.name.endsWith('.txt') && !file.name.endsWith('.md')) {
+    alert('目前只支持 .txt 和 .md 文件哦～');
+    return;
+  }
+
+  // 小文件直接上传
+  if (file.size <= 500 * 1024) {
+    await uploadSmallFile(file);
+    return;
+  }
+
+  // 大文件分片上传
+  await uploadLargeFile(file);
+}
+
+async function uploadSmallFile(file) {
+  const text = await file.text();
+  const { data } = await sb.from('writer_files').insert({
+    folder_id: currentFolderId,
+    name: file.name,
+    content: text,
+    size: text.length
+  }).select().single();
+
+  if (data) {
+    files.unshift(data);
+    renderFiles();
+    loadFolders(); // 更新文件夹内文件计数
+  }
+}
+
+async function uploadLargeFile(file) {
+  // 检查是否已有同名文件（断点续传）
+  let query = sb.from('writer_files').select('id').eq('name', file.name);
+  if (currentFolderId) query = query.eq('folder_id', currentFolderId);
+  else query = query.is('folder_id', null);
+  const { data: existing } = await query.limit(1);
+
+  let fileId;
+  if (existing && existing.length > 0) {
+    fileId = existing[0].id;
+    // 获取已上传的分片
+    const { data: chunks } = await sb.from('writer_file_chunks').select('chunk_index').eq('file_id', fileId);
+    const uploadedChunks = new Set((chunks || []).map(c => c.chunk_index));
+    await uploadChunks(file, fileId, uploadedChunks, true);
+  } else {
+    // 新建文件记录
+    const { data: newFile } = await sb.from('writer_files').insert({
+      folder_id: currentFolderId,
+      name: file.name,
+      content: '',
+      size: file.size
+    }).select().single();
+    if (!newFile) return;
+    fileId = newFile.id;
+    await uploadChunks(file, fileId, new Set(), false);
+  }
+}
+
+async function uploadChunks(file, fileId, uploadedChunks, isResume) {
+  const CHUNK_SIZE = 100 * 1024; // 100KB per chunk
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+  // 显示进度条
+  const progressBar = document.getElementById('uploadProgress');
+  const barInner = document.getElementById('upBarInner');
+  const upText = document.getElementById('upText');
+  const upTitle = document.getElementById('upTitle');
+  progressBar.classList.add('show');
+
+  let completed = uploadedChunks.size;
+  upTitle.textContent = isResume ? `正在续传 ${file.name}...` : `正在上传 ${file.name}...`;
+  updateProgress(barInner, upText, completed, totalChunks);
+
+  for (let i = 0; i < totalChunks; i++) {
+    if (uploadedChunks.has(i)) continue;
+
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const blob = file.slice(start, end);
+    const text = await blob.text();
+
+    try {
+      await sb.from('writer_file_chunks').insert({
+        file_id: fileId,
+        chunk_index: i,
+        content: text
+      });
+    } catch (e) {
+      // 可能重复插入（并发问题），忽略
+    }
+
+    completed++;
+    updateProgress(barInner, upText, completed, totalChunks);
+  }
+
+  // 合并所有分片到文件内容
+  const { data: allChunks } = await sb.from('writer_file_chunks')
+    .select('content')
+    .eq('file_id', fileId)
+    .order('chunk_index', { ascending: true });
+
+  const fullContent = (allChunks || []).map(c => c.content).join('');
+
+  await sb.from('writer_files').update({
+    content: fullContent,
+    size: fullContent.length
+  }).eq('id', fileId);
+
+  // 清除分片
+  await sb.from('writer_file_chunks').delete().eq('file_id', fileId);
+
+  // 完成
+  setTimeout(() => progressBar.classList.remove('show'), 1000);
+  await loadFiles(currentFolderId);
+}
+
+function updateProgress(bar, text, current, total) {
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  bar.style.width = pct + '%';
+  text.textContent = `${current}/${total} 分片 (${pct}%)`;
+}
+
+// ===== 文件预览/操作 =====
+function previewFileById(id) {
+  const file = files.find(f => f.id === id);
+  if (!file) return;
+  previewFile = file;
+  document.getElementById('previewTitle').textContent = `📄 ${file.name}`;
+  document.getElementById('previewBody').textContent = file.content || '(空文件)';
+  document.getElementById('filePreview').classList.add('show');
+}
+
+function closePreview() {
+  document.getElementById('filePreview').classList.remove('show');
+  previewFile = null;
+}
+
+function downloadPreview() {
+  if (!previewFile) return;
+  const blob = new Blob([previewFile.content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = previewFile.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function deleteFile(id) {
+  if (!confirm('确定删除这个文件吗？')) return;
+  await sb.from('writer_file_chunks').delete().eq('file_id', id);
+  await sb.from('writer_files').delete().eq('id', id);
+  if (previewFile && previewFile.id === id) closePreview();
+  files = files.filter(f => f.id !== id);
+  renderFiles();
+}
+
+// ===== AI 续写/扩写 =====
+function openFileAiContinue() {
+  if (!previewFile) return;
+  closePreview();
+  sendAiForFile(previewFile, '续写');
+}
+
+function openFileAiExpand() {
+  if (!previewFile) return;
+  closePreview();
+  sendAiForFile(previewFile, '扩写');
+}
+
+async function sendAiForFile(file, action) {
+  // 确保有对话
+  if (!currentConvId) await newConversation();
+  if (!currentConvId) return;
+
+  const prompt = action === '续写'
+    ? `以下是用户的小说当前内容，请自然地续写下去，保持风格一致：\n\n${file.content.slice(0, 10000)}\n\n（请续写）`
+    : `以下是用户的小说当前内容中的一段，请在不改变原意的基础上进行扩写，增加描写和细节：\n\n${file.content.slice(0, 5000)}\n\n（请扩写）`;
+
+  // 发送用户消息
+  await sb.from('writer_messages').insert({
+    conversation_id: currentConvId,
+    role: 'user',
+    content: `✍️ 请帮我${action}文件「${file.name}」`
+  });
+
+  // 加载历史消息
+  const { data: history } = await sb.from('writer_messages')
+    .select('role,content')
+    .eq('conversation_id', currentConvId)
+    .order('created_at', { ascending: true });
+
+  const msgList = document.getElementById('msgList');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg assistant msg-loading';
+  loadingDiv.innerHTML = `<div class="msg-bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
+  msgList.appendChild(loadingDiv);
+  msgList.scrollTop = msgList.scrollHeight;
+
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history.slice(0, -1).map(h => ({ role: h.role, content: h.content })),
+    { role: 'user', content: prompt }
+  ];
+
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
+      body: JSON.stringify({ model: 'deepseek-chat', messages, stream: false, max_tokens: 4096 })
+    });
+    const json = await res.json();
+    const reply = json.choices?.[0]?.message?.content || '虾虾写不出来啦 >_<';
+
+    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: reply });
+
+    // 更新对话标题
+    const conv = conversations.find(c => c.id === currentConvId);
+    if (conv && conv.title === '新对话') {
+      await sb.from('writer_conversations').update({ title: `${action} ${file.name}` }).eq('id', currentConvId);
+      conv.title = `${action} ${file.name}`;
+      document.getElementById('chatTitle').textContent = conv.title;
+      renderConversations();
+    }
+
+    await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
+
+    loadingDiv.remove();
+    await loadMessages(currentConvId);
+
+  } catch (e) {
+    loadingDiv.remove();
+    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: '😅 网络出问题了，再试试吧～' });
+    await loadMessages(currentConvId);
+  }
+}
+
+// ==================== 工具函数 ====================
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + 'KB';
+  return (bytes/1024/1024).toFixed(1) + 'MB';
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+</script>
+</body>
+</html>
