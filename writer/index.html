@@ -27,11 +27,18 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 #app.show { display: flex; }
 
 /* 左栏 - 对话列表 */
-.sidebar { width: 240px; min-width: 240px; background: #fff; border-right: 1px solid #e0ddd8; display: flex; flex-direction: column; }
+.sidebar { width: 240px; min-width: 240px; background: #fff; border-right: 1px solid #e0ddd8; display: flex; flex-direction: column; transition: width .3s,min-width .3s; position: relative; }
+.sidebar.collapsed { width: 40px; min-width: 40px; }
+.sidebar.collapsed .sidebar-header h2,
+.sidebar.collapsed .conv-list,
+.sidebar.collapsed .sidebar-header button { display: none; }
+.sidebar.collapsed .sidebar-header { justify-content: center; padding: 12px 0; }
 .sidebar-header { padding: 16px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
-.sidebar-header h2 { font-size: 16px; color: #2e7d32; }
-.sidebar-header button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0ddd8; background: #f5f0eb; cursor: pointer; font-size: 18px; line-height: 1; transition: background .2s; }
-.sidebar-header button:hover { background: #e0ddd8; }
+.sidebar-header h2 { font-size: 16px; color: #2e7d32; white-space: nowrap; }
+.sidebar-header .btn-fold { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0ddd8; background: #f5f0eb; cursor: pointer; font-size: 14px; line-height: 1; transition: background .2s; display: flex; align-items: center; justify-content: center; }
+.sidebar-header .btn-fold:hover { background: #e0ddd8; }
+.sidebar-toggle-tab { position: absolute; right: -24px; top: 50%; transform: translateY(-50%); width: 24px; height: 48px; background: #fff; border: 1px solid #e0ddd8; border-left: none; border-radius: 0 8px 8px 0; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 12px; color: #888; z-index: 10; }
+.sidebar.collapsed .sidebar-toggle-tab { display: flex; }
 .conv-list { flex: 1; overflow-y: auto; padding: 8px; }
 .conv-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #555; margin-bottom: 4px; transition: background .2s; display: flex; align-items: center; justify-content: space-between; }
 .conv-item:hover { background: #f5f0eb; }
@@ -71,9 +78,17 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .chat-input .btn-send:disabled { background: #a5d6a7; cursor: not-allowed; }
 
 /* 右栏 - 文件管理 */
-.file-panel { width: 280px; min-width: 280px; background: #fff; border-left: 1px solid #e0ddd8; display: flex; flex-direction: column; }
+.file-panel { width: 280px; min-width: 280px; background: #fff; border-left: 1px solid #e0ddd8; display: flex; flex-direction: column; transition: width .3s,min-width .3s; overflow: hidden; position: relative; }
+.file-panel.collapsed { width: 40px; min-width: 40px; }
+.file-panel.collapsed .file-header h2,
+.file-panel.collapsed .file-header .actions,
+.file-panel.collapsed .folder-list,
+.file-panel.collapsed .file-list { display: none; }
+.file-panel.collapsed .file-header { justify-content: center; padding: 12px 0; }
+.file-panel-toggle-tab { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 48px; background: #fff; border: 1px solid #e0ddd8; border-right: none; border-radius: 8px 0 0 8px; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 12px; color: #888; z-index: 10; }
+.file-panel.collapsed .file-panel-toggle-tab { display: flex; }
 .file-header { padding: 16px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
-.file-header h2 { font-size: 16px; color: #2e7d32; }
+.file-header h2 { font-size: 16px; color: #2e7d32; white-space: nowrap; }
 .file-header .actions { display: flex; gap: 6px; }
 .file-header .actions button { padding: 6px 12px; border-radius: 8px; border: 1px solid #e0ddd8; background: #f5f0eb; cursor: pointer; font-size: 12px; transition: background .2s; }
 .file-header .actions button:hover { background: #e0ddd8; }
@@ -163,11 +178,15 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 <div id="app">
 
   <!-- 左栏：对话列表 -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h2>🦐 对话</h2>
-      <button onclick="newConversation()" title="新建对话">＋</button>
+      <div style="display:flex;gap:4px">
+        <button class="btn-fold" onclick="toggleSidebar()" title="折叠侧栏">◀</button>
+        <button class="btn-fold" onclick="newConversation()" title="新建对话">＋</button>
+      </div>
     </div>
+    <div class="sidebar-toggle-tab" onclick="toggleSidebar()">▶</div>
     <div class="conv-list" id="convList"></div>
   </div>
 
@@ -187,15 +206,17 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
   </div>
 
   <!-- 右栏：文件管理 -->
-  <div class="file-panel">
+  <div class="file-panel" id="filePanel">
     <div class="file-header">
       <h2>📁 文件</h2>
       <div class="actions">
         <button onclick="showNewFolder()">+ 文件夹</button>
         <button onclick="uploadFile()">📤 上传</button>
+        <button class="btn-fold" onclick="toggleFilePanel()" title="折叠文件面板">▶</button>
         <input type="file" id="fileInput" accept=".txt,.md" style="display:none" onchange="handleFileSelect(event)">
       </div>
     </div>
+    <div class="file-panel-toggle-tab" onclick="toggleFilePanel()">◀</div>
     <div class="folder-list" id="folderList"></div>
     <div class="file-list" id="fileList"></div>
   </div>
@@ -258,6 +279,14 @@ let files = [];
 let currentFolderId = null;
 let previewFile = null;
 let isSending = false;
+
+// ===== 侧栏折叠 =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+function toggleFilePanel() {
+  document.getElementById('filePanel').classList.toggle('collapsed');
+}
 
 // ===== 密码登录 =====
 let DEEPSEEK_KEY = '';
