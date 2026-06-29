@@ -407,54 +407,46 @@ async function sendMessage() {
   // 更新更新时间
   await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
 
-  // 开始轮询虾虾的回复（轮询最多 120 秒 / 2秒一次 = 60次）
-  startPolling(currentConvId, 0);
+  // 订阅实时回复（Supabase Realtime）
+  subscribeToReplies(currentConvId);
+
+  isSending = false;
+  document.getElementById('btnSend').disabled = false;
 }
 
-// ===== 轮询虾虾回复 =====
-let pollTimer = null;
-async function startPolling(convId, attempt) {
-  if (attempt >= 60) { // 120秒超时
-    stopPolling();
-    const loading = document.getElementById('axiaLoading');
-    if (loading) loading.remove();
-    // 给个提示
-    const msgList = document.getElementById('msgList');
-    const timeoutDiv = document.createElement('div');
-    timeoutDiv.className = 'msg assistant';
-    timeoutDiv.innerHTML = '<div class="msg-bubble">😅 虾虾好像睡着了，点「发送」再试一次吧～</div>';
-    msgList.appendChild(timeoutDiv);
-    msgList.scrollTop = msgList.scrollHeight;
-    isSending = false;
-    document.getElementById('btnSend').disabled = false;
-    return;
+// ===== Supabase Realtime 订阅 =====
+let realtimeSub = null;
+
+function subscribeToReplies(convId) {
+  // 取消旧订阅
+  if (realtimeSub) {
+    sb.removeChannel(realtimeSub);
+    realtimeSub = null;
   }
 
-  // 查询最新未读的虾虾回复
-  const { data } = await sb.from('writer_messages')
-    .select('*')
-    .eq('conversation_id', convId)
-    .eq('role', 'assistant')
-    .eq('axia_handled', true)
-    .order('created_at', { ascending: false })
-    .limit(1);
+  realtimeSub = sb.channel(`writer-${convId}`)
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'writer_messages',
+        filter: `conversation_id=eq.${convId}` },
+      async (payload) => {
+        const msg = payload.new;
+        // 虾虾的回复到了！
+        if (msg.role === 'assistant' && msg.axia_handled === true) {
+          const loading = document.getElementById('axiaLoading');
+          if (loading) loading.remove();
+          await loadMessages(convId);
+        }
+      }
+    )
+    .subscribe();
 
-  if (data && data.length > 0) {
-    // 虾虾回复了！
-    stopPolling();
-    const loading = document.getElementById('axiaLoading');
-    if (loading) loading.remove();
-    await loadMessages(convId);
-    isSending = false;
-    document.getElementById('btnSend').disabled = false;
-  } else {
-    // 继续等
-    pollTimer = setTimeout(() => startPolling(convId, attempt + 1), 2000);
-  }
-}
-
-function stopPolling() {
-  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  // 如果 30 秒后还没回复，清理订阅
+  setTimeout(() => {
+    if (realtimeSub) {
+      sb.removeChannel(realtimeSub);
+      realtimeSub = null;
+    }
+  }, 60000);
 }
 
 // ==================== 文件管理 ====================
