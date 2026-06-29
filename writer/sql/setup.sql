@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS writer_messages (
   conversation_id BIGINT REFERENCES writer_conversations(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
+  axia_handled BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

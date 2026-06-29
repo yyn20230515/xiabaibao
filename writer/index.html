@@ -168,8 +168,7 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
     <h1>🦐 虾虾写作助手</h1>
     <p>给妈妈的专属 AI 写作小帮手</p>
     <input type="password" id="loginPwd" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
-    <input type="password" id="loginApiKey" placeholder="DeepSeek API Key" autocomplete="off" style="margin-top:10px" onkeydown="if(event.key==='Enter')doLogin()">
-    <div class="err" id="loginErr">密码或API Key不对，再试试吧</div>
+    <div class="err" id="loginErr">密码不对，再试试吧</div>
     <button onclick="doLogin()">进入 ✨</button>
   </div>
 </div>
@@ -253,24 +252,6 @@ const SUPABASE_URL = 'https://bxmdfgivaqqpxtjilxnj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4bWRmZ2l2YXFxcHh0amlseG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjY3NjMsImV4cCI6MjA5NTMwMjc2M30.VUbG7bnXzNeaIfTT5PsSpPIy__IEONbZBHLRen3iDPY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ===== 阿夏系统提示 =====
-const SYSTEM_PROMPT = `你是虾虾（阿夏），一个温暖可爱的 AI 写作助手。你的主要任务是帮用户（一位正在写小说的作者）创作和完善小说。
-
-你的风格：
-1. 温暖鼓励，对用户的每一段文字都认真回应
-2. 写小说时文笔优美、描写细腻
-3. 遇到用户询问写作建议时给出具体可操作的建议
-4. 用户上传文件时，先阅读内容再回应
-5. 续写时要保持用户原有的风格和情节走向
-
-创作原则：
-- 不改动用户已有的核心设定
-- 续写前先确认用户的创作意图
-- 描写丰富但不啰嗦
-- 角色对话要自然生动
-
-你叫阿夏，自称"虾虾"，对用户用"您"。`;
-
 // ==================== 状态 ====================
 let conversations = [];
 let currentConvId = null;
@@ -289,13 +270,8 @@ function toggleFilePanel() {
 }
 
 // ===== 密码登录 =====
-let DEEPSEEK_KEY = '';
-
 function doLogin() {
-  const pwd = document.getElementById('loginPwd').value;
-  const apiKey = document.getElementById('loginApiKey').value.trim();
-  if (pwd === PASSWORD && apiKey) {
-    DEEPSEEK_KEY = apiKey;
+  if (document.getElementById('loginPwd').value === PASSWORD) {
     document.getElementById('loginOverlay').classList.add('hidden');
     document.getElementById('app').classList.add('show');
     init();
@@ -367,8 +343,12 @@ async function deleteConversation(id) {
 // ==================== 消息管理 ====================
 async function loadMessages(convId) {
   if (!convId) return;
-  const { data } = await sb.from('writer_messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true });
-  renderMessages(data || []);
+  // 加载用户消息 + 已处理的虾虾回复
+  const { data: userMsgs } = await sb.from('writer_messages').select('*').eq('conversation_id', convId).eq('role', 'user').order('created_at', { ascending: true });
+  const { data: assistantMsgs } = await sb.from('writer_messages').select('*').eq('conversation_id', convId).eq('role', 'assistant').eq('axia_handled', true).order('created_at', { ascending: true });
+  // 合并消息
+  const allMsgs = [...(userMsgs || []), ...(assistantMsgs || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  renderMessages(allMsgs);
 }
 
 function renderMessages(msgs) {
@@ -402,63 +382,79 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
 
-  // 保存用户消息
-  await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: text });
+  // 保存用户消息（标记为等待虾虾回复）
+  await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: text, axia_handled: false });
 
-  // 加载历史消息给AI
-  const { data: history } = await sb.from('writer_messages').select('role,content').eq('conversation_id', currentConvId).order('created_at', { ascending: true });
+  // 更新对话标题
+  const conv = conversations.find(c => c.id === currentConvId);
+  if (conv && conv.title === '新对话') {
+    const newTitle = text.length > 20 ? text.slice(0, 20) + '...' : text;
+    await sb.from('writer_conversations').update({ title: newTitle }).eq('id', currentConvId);
+    conv.title = newTitle;
+    document.getElementById('chatTitle').textContent = newTitle;
+    renderConversations();
+  }
 
-  // 显示加载动画
+  // 显示等待虾虾回复的动画
   const msgList = document.getElementById('msgList');
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'msg assistant msg-loading';
+  loadingDiv.id = 'axiaLoading';
   loadingDiv.innerHTML = `<div class="msg-bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
   msgList.appendChild(loadingDiv);
   msgList.scrollTop = msgList.scrollHeight;
 
-  // 调 AI
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...history.map(h => ({ role: h.role, content: h.content }))
-  ];
+  // 更新更新时间
+  await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
 
-  try {
-    const res = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
-      body: JSON.stringify({ model: 'deepseek-chat', messages, stream: false, max_tokens: 4096 })
-    });
-    const json = await res.json();
-    const reply = json.choices?.[0]?.message?.content || '抱歉，虾虾没想好怎么回答 >_<';
+  // 开始轮询虾虾的回复（轮询最多 120 秒 / 2秒一次 = 60次）
+  startPolling(currentConvId, 0);
+}
 
-    // 保存 AI 回复
-    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: reply });
-
-    // 如果对话还是"新对话"，自动根据第一轮对话重命名
-    const conv = conversations.find(c => c.id === currentConvId);
-    if (conv && conv.title === '新对话') {
-      const newTitle = text.length > 20 ? text.slice(0, 20) + '...' : text;
-      await sb.from('writer_conversations').update({ title: newTitle }).eq('id', currentConvId);
-      conv.title = newTitle;
-      document.getElementById('chatTitle').textContent = newTitle;
-      renderConversations();
-    }
-
-    // 更新更新时间
-    await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
-
-    // 重新加载消息
-    loadingDiv.remove();
-    await loadMessages(currentConvId);
-
-  } catch (e) {
-    loadingDiv.remove();
-    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: '😅 啊，虾虾网络出问题了，再试一次吧～' });
-    await loadMessages(currentConvId);
+// ===== 轮询虾虾回复 =====
+let pollTimer = null;
+async function startPolling(convId, attempt) {
+  if (attempt >= 60) { // 120秒超时
+    stopPolling();
+    const loading = document.getElementById('axiaLoading');
+    if (loading) loading.remove();
+    // 给个提示
+    const msgList = document.getElementById('msgList');
+    const timeoutDiv = document.createElement('div');
+    timeoutDiv.className = 'msg assistant';
+    timeoutDiv.innerHTML = '<div class="msg-bubble">😅 虾虾好像睡着了，点「发送」再试一次吧～</div>';
+    msgList.appendChild(timeoutDiv);
+    msgList.scrollTop = msgList.scrollHeight;
+    isSending = false;
+    document.getElementById('btnSend').disabled = false;
+    return;
   }
 
-  isSending = false;
-  document.getElementById('btnSend').disabled = false;
+  // 查询最新未读的虾虾回复
+  const { data } = await sb.from('writer_messages')
+    .select('*')
+    .eq('conversation_id', convId)
+    .eq('role', 'assistant')
+    .eq('axia_handled', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (data && data.length > 0) {
+    // 虾虾回复了！
+    stopPolling();
+    const loading = document.getElementById('axiaLoading');
+    if (loading) loading.remove();
+    await loadMessages(convId);
+    isSending = false;
+    document.getElementById('btnSend').disabled = false;
+  } else {
+    // 继续等
+    pollTimer = setTimeout(() => startPolling(convId, attempt + 1), 2000);
+  }
+}
+
+function stopPolling() {
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
 }
 
 // ==================== 文件管理 ====================
@@ -718,80 +714,15 @@ async function deleteFile(id) {
 function openFileAiContinue() {
   if (!previewFile) return;
   closePreview();
-  sendAiForFile(previewFile, '续写');
+  document.getElementById('chatInput').value = `📄 帮我续写「${previewFile.name}」的内容，这是目前的内容：\n\n${previewFile.content.slice(0, 2000)}`;
+  document.getElementById('chatInput').focus();
 }
 
 function openFileAiExpand() {
   if (!previewFile) return;
   closePreview();
-  sendAiForFile(previewFile, '扩写');
-}
-
-async function sendAiForFile(file, action) {
-  // 确保有对话
-  if (!currentConvId) await newConversation();
-  if (!currentConvId) return;
-
-  const prompt = action === '续写'
-    ? `以下是用户的小说当前内容，请自然地续写下去，保持风格一致：\n\n${file.content.slice(0, 10000)}\n\n（请续写）`
-    : `以下是用户的小说当前内容中的一段，请在不改变原意的基础上进行扩写，增加描写和细节：\n\n${file.content.slice(0, 5000)}\n\n（请扩写）`;
-
-  // 发送用户消息
-  await sb.from('writer_messages').insert({
-    conversation_id: currentConvId,
-    role: 'user',
-    content: `✍️ 请帮我${action}文件「${file.name}」`
-  });
-
-  // 加载历史消息
-  const { data: history } = await sb.from('writer_messages')
-    .select('role,content')
-    .eq('conversation_id', currentConvId)
-    .order('created_at', { ascending: true });
-
-  const msgList = document.getElementById('msgList');
-  const loadingDiv = document.createElement('div');
-  loadingDiv.className = 'msg assistant msg-loading';
-  loadingDiv.innerHTML = `<div class="msg-bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
-  msgList.appendChild(loadingDiv);
-  msgList.scrollTop = msgList.scrollHeight;
-
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...history.slice(0, -1).map(h => ({ role: h.role, content: h.content })),
-    { role: 'user', content: prompt }
-  ];
-
-  try {
-    const res = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
-      body: JSON.stringify({ model: 'deepseek-chat', messages, stream: false, max_tokens: 4096 })
-    });
-    const json = await res.json();
-    const reply = json.choices?.[0]?.message?.content || '虾虾写不出来啦 >_<';
-
-    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: reply });
-
-    // 更新对话标题
-    const conv = conversations.find(c => c.id === currentConvId);
-    if (conv && conv.title === '新对话') {
-      await sb.from('writer_conversations').update({ title: `${action} ${file.name}` }).eq('id', currentConvId);
-      conv.title = `${action} ${file.name}`;
-      document.getElementById('chatTitle').textContent = conv.title;
-      renderConversations();
-    }
-
-    await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
-
-    loadingDiv.remove();
-    await loadMessages(currentConvId);
-
-  } catch (e) {
-    loadingDiv.remove();
-    await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'assistant', content: '😅 网络出问题了，再试试吧～' });
-    await loadMessages(currentConvId);
-  }
+  document.getElementById('chatInput').value = `📄 帮我扩写「${previewFile.name}」中的这一段：\n\n${previewFile.content.slice(0, 2000)}`;
+  document.getElementById('chatInput').focus();
 }
 
 // ==================== 工具函数 ====================
