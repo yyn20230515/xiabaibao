@@ -67,3 +67,8 @@ CREATE POLICY "Allow all" ON writer_file_chunks FOR ALL USING (true) WITH CHECK 
 CREATE INDEX IF NOT EXISTS idx_writer_messages_conv ON writer_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_writer_files_folder ON writer_files(folder_id);
 CREATE INDEX IF NOT EXISTS idx_writer_file_chunks_file ON writer_file_chunks(file_id);
+
+-- ⚠️ 重要：启用 Realtime 实时推送（否则前端收不到新消息通知）
+-- 在 Supabase Dashboard → Database → Replication → 勾选 writer_messages 表
+-- 或执行以下 SQL：
+ALTER PUBLICATION supabase_realtime ADD TABLE writer_messages;

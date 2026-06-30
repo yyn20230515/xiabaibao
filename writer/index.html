@@ -382,7 +382,19 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
 
-  // 保存用户消息（标记为等待虾虾回复）
+  // ★ 修复1：立即显示用户消息（乐观渲染）
+  const msgList = document.getElementById('msgList');
+  // 清除"选择对话"占位提示
+  if (msgList.children.length === 1 && msgList.children[0].tagName === 'DIV') {
+    msgList.innerHTML = '';
+  }
+  const userMsgDiv = document.createElement('div');
+  userMsgDiv.className = 'msg user';
+  userMsgDiv.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div>`;
+  msgList.appendChild(userMsgDiv);
+  msgList.scrollTop = msgList.scrollHeight;
+
+  // 保存用户消息到数据库
   await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: text, axia_handled: false });
 
   // 更新对话标题
@@ -396,7 +408,6 @@ async function sendMessage() {
   }
 
   // 显示等待虾虾回复的动画
-  const msgList = document.getElementById('msgList');
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'msg assistant msg-loading';
   loadingDiv.id = 'axiaLoading';
@@ -407,63 +418,92 @@ async function sendMessage() {
   // 更新更新时间
   await sb.from('writer_conversations').update({ updated_at: new Date().toISOString() }).eq('id', currentConvId);
 
-  // 启动双通道监听：Realtime + 轮询兜底
+  // ★ 修复2：启动监听前先清理旧的定时器
   startWatchingForReply(currentConvId);
 
   isSending = false;
   document.getElementById('btnSend').disabled = false;
 }
 
-// ===== 双通道监听回复 =====
+// ===== 双通道监听回复（修复版） =====
 let watchTimer = null;
-let realtimeSub = null;
+let watchConvId = null;
+let pollAttempts = 0;
 
 function startWatchingForReply(convId) {
-  // 1. Realtime 订阅（实时推送）
-  if (realtimeSub) { sb.removeChannel(realtimeSub); realtimeSub = null; }
-  realtimeSub = sb.channel(`writer-${convId}`)
+  // 清理旧轮询
+  if (watchTimer) { clearTimeout(watchTimer); watchTimer = null; }
+  pollAttempts = 0;
+  watchConvId = convId;
+
+  // 1. Realtime 订阅（先取消旧的）
+  if (window._realtimeSub) {
+    sb.removeChannel(window._realtimeSub);
+    window._realtimeSub = null;
+  }
+  window._realtimeSub = sb.channel(`writer-reply-${convId}`)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'writer_messages',
         filter: `conversation_id=eq.${convId}` },
       async (payload) => {
         const msg = payload.new;
         if (msg.role === 'assistant' && msg.axia_handled === true) {
-          clearTimeout(watchTimer); watchTimer = null;
-          const loading = document.getElementById('axiaLoading');
-          if (loading) loading.remove();
-          await loadMessages(convId);
+          onReplyReceived(convId);
         }
       }
     )
     .subscribe();
 
-  // 2. 轮询兜底（每 3 秒查一次，防止 Realtime 没开启）
-  let attempts = 0;
-  function poll() {
-    if (attempts++ > 40) { // 120秒超时
-      const loading = document.getElementById('axiaLoading');
-      if (loading) loading.remove();
-      return;
+  // 2. 立即开始轮询
+  pollForReply(convId);
+}
+
+function onReplyReceived(convId) {
+  clearTimeout(watchTimer); watchTimer = null;
+  watchConvId = null;
+  const loading = document.getElementById('axiaLoading');
+  if (loading) loading.remove();
+  loadMessages(convId);
+}
+
+function pollForReply(convId) {
+  // 如果已经收到回复了就不继续
+  if (!watchTimer && watchConvId === null) return;
+
+  if (pollAttempts++ > 60) { // 180秒超时
+    const loading = document.getElementById('axiaLoading');
+    if (loading) {
+      loading.className = 'msg assistant';
+      loading.innerHTML = '<div class="msg-bubble" style="color:#999">⏰ 虾虾回复超时了，请刷新页面重试</div>';
     }
-    sb.from('writer_messages')
-      .select('id')
-      .eq('conversation_id', convId)
-      .eq('role', 'assistant')
-      .eq('axia_handled', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          clearTimeout(watchTimer); watchTimer = null;
-          const loading = document.getElementById('axiaLoading');
-          if (loading) loading.remove();
-          loadMessages(convId);
-        } else {
-          watchTimer = setTimeout(poll, 3000);
-        }
-      });
+    watchTimer = null;
+    watchConvId = null;
+    return;
   }
-  watchTimer = setTimeout(poll, 3000);
+
+  sb.from('writer_messages')
+    .select('id,role,content,created_at')
+    .eq('conversation_id', convId)
+    .eq('role', 'assistant')
+    .eq('axia_handled', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .then(({ data, error }) => {
+      if (error) {
+        // 请求失败，3秒后重试
+        watchTimer = setTimeout(() => pollForReply(convId), 3000);
+        return;
+      }
+      if (data && data.length > 0) {
+        onReplyReceived(convId);
+      } else {
+        watchTimer = setTimeout(() => pollForReply(convId), 3000);
+      }
+    })
+    .catch(() => {
+      // 网络错误等，继续轮询
+      watchTimer = setTimeout(() => pollForReply(convId), 3000);
+    });
 }
 
 // ==================== 文件管理 ====================
