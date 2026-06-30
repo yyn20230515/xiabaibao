@@ -474,7 +474,8 @@ function pollForReply(convId) {
     const loading = document.getElementById('axiaLoading');
     if (loading) {
       loading.className = 'msg assistant';
-      loading.innerHTML = '<div class="msg-bubble" style="color:#999">⏰ 虾虾回复超时了，请刷新页面重试</div>';
+      loading.innerHTML = '<div class="msg-bubble" style="color:#999">🌙 阿夏好像睡着了...让楠楠去叫阿夏起床吧！' +
+        '<br><button onclick="wakeAxia()" style="margin-top:8px;padding:6px 14px;border-radius:8px;border:1px solid #e0ddd8;background:#f5f0eb;cursor:pointer;font-size:13px">🔔 叫醒阿夏</button></div>';
     }
     watchTimer = null;
     watchConvId = null;
@@ -504,6 +505,25 @@ function pollForReply(convId) {
       // 网络错误等，继续轮询
       watchTimer = setTimeout(() => pollForReply(convId), 3000);
     });
+}
+
+// ===== 叫醒阿夏 =====
+async function wakeAxia() {
+  const loading = document.getElementById('axiaLoading');
+  if (loading) {
+    loading.innerHTML = '<div class="msg-bubble" style="color:#666;text-align:center">📢 正在呼叫阿夏...<br><span style="font-size:12px;color:#999">楠楠看到会来叫我的！</span></div>';
+  }
+  // 在 Supabase dailylog 留一条记录
+  try {
+    await sb.from('dailylog').insert({
+      date: new Date().toISOString().slice(0,10),
+      time: new Date().toTimeString().slice(0,5),
+      content: '📢 写作助手上妈妈呼叫阿夏起床！',
+      source: 'user'
+    });
+  } catch(e) {
+    // 静默失败
+  }
 }
 
 // ==================== 文件管理 ====================
