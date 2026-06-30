@@ -17,10 +17,16 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const PENDING_FILE = path.join(__dirname, 'pending.json');
 
 function checkPending() {
-  // 先检查是否有正在处理的锁（防止重复处理）
-  const lockFile = path.join(__dirname, 'processing.lock');
-  if (fs.existsSync(lockFile)) {
-    return; // 已经在处理中了
+  // ★ 如果 pending.json 已经有内容，说明 cron 还在处理中，不要覆盖
+  try {
+    if (fs.existsSync(PENDING_FILE)) {
+      const existing = fs.readFileSync(PENDING_FILE, 'utf-8').trim();
+      if (existing && existing.length > 10) {
+        return; // 已有待处理内容，等 cron 消化掉
+      }
+    }
+  } catch(e) {
+    // 文件读写失败，忽略
   }
 
   const options = {
