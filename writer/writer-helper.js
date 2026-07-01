@@ -156,6 +156,26 @@ async function main() {
     return;
   }
 
+  if (cmd === 'create-file') {
+    const folderId = process.argv[3];
+    const name = process.argv[4];
+    let content = process.argv.slice(5).join(' ');
+    if (!name || !content) { console.log('ERROR: missing name or content'); return; }
+    content = content.replace(/\\n/g, '\n');
+    const result = await supabaseRequest('POST', '/rest/v1/writer_files', {
+      folder_id: folderId && folderId !== 'null' ? parseInt(folderId) : null,
+      name: name,
+      content: content,
+      size: content.length
+    });
+    if (result.status === 201) {
+      console.log('OK:' + (result.body ? JSON.stringify(result.body) : 'created'));
+    } else {
+      console.log('FAIL:' + result.status);
+    }
+    return;
+  }
+
   console.log('ERROR: unknown command ' + cmd);
 }
 

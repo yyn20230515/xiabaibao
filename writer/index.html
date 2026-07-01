@@ -246,6 +246,7 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
     <div class="file-header">
       <h2>📁 文件</h2>
       <div class="actions">
+        <button onclick="showNewFile()">+ 文件</button>
         <button onclick="showNewFolder()">+ 文件夹</button>
         <button onclick="uploadFile()">📤 上传</button>
         <button class="btn-fold" onclick="toggleFilePanel()" title="折叠文件面板">▶</button>
@@ -662,6 +663,29 @@ async function createFolder(name) {
   if (data) {
     folders.push(data);
     selectFolder(data.id);
+  }
+}
+
+// ===== 新建文件 =====
+function showNewFile() {
+  const name = prompt('输入文件名（不需要扩展名，自动保存为 .txt）：');
+  if (!name || !name.trim()) return;
+  const content = prompt('输入文件内容：');
+  if (content === null) return;
+  createNewFile(name.trim() + '.txt', content || '', currentFolderId);
+}
+
+async function createNewFile(name, content, folderId) {
+  const { data } = await sb.from('writer_files').insert({
+    folder_id: folderId,
+    name: name,
+    content: content,
+    size: content.length
+  }).select().single();
+  if (data) {
+    files.unshift(data);
+    renderFiles();
+    loadFolders();
   }
 }
 
