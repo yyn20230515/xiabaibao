@@ -105,9 +105,6 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .folder-item .del-folder { font-size: 12px; color: #ccc; cursor: pointer; display: none; padding: 0 4px; }
 .folder-item:hover .del-folder { display: inline; }
 .folder-item .del-folder:hover { color: #e53935; }
-.add-folder { padding: 6px 10px; cursor: pointer; font-size: 13px; color: #4caf50; border-radius: 6px; }
-.add-folder:hover { background: #e8f5e9; }
-
 /* ===== 树状文件管理 ===== */
 .tree-empty { text-align:center; color:#aaa; padding:20px; font-size:13px; }
 .tree-folder { border-bottom:1px solid #f0f0f0; }
@@ -130,6 +127,11 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .tree-file .fops button { padding: 2px 6px; border-radius: 4px; border: none; background: transparent; cursor: pointer; font-size: 12px; color: #888; }
 .tree-file .fops button:hover { background: #e8e5e0; color: #333; }
 .tree-root-divider { height: 1px; background: #e8e5e0; margin: 4px 0; }
+
+/* ===== 树底操作栏 ===== */
+.tree-actions { border-top: 1px solid #e8e5e0; padding: 6px 8px; }
+.tree-action { padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #4caf50; display: flex; align-items: center; gap: 6px; transition: background .2s; }
+.tree-action:hover { background: #e8f5e9; }
 
 /* 文件列表 */
 .file-list { flex: 1; overflow-y: auto; padding: 8px; }
@@ -298,9 +300,6 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
     <div class="file-header">
       <h2>📁 文件</h2>
       <div class="actions">
-        <button onclick="showNewFile()">+ 文件</button>
-        <button onclick="showNewFolder()">+ 文件夹</button>
-        <button onclick="uploadFile()">📤 上传</button>
         <button class="btn-fold" onclick="toggleFilePanel()" title="折叠文件面板">▶</button>
         <input type="file" id="fileInput" accept=".txt,.md" style="display:none" onchange="handleFileSelect(event)">
       </div>
@@ -763,7 +762,13 @@ function renderFileTree() {
     html += '</div>';
   });
   
-  html += '<div class="add-folder" onclick="showNewFolder()">＋ 新建文件夹</div>';
+  // 操作栏
+  html += '<div class="tree-actions">';
+  html += '<div class="tree-action" onclick="showNewFolder()">＋ 新建文件夹</div>';
+  html += '<div class="tree-action" onclick="showNewFile()">＋ 新建文件</div>';
+  html += '<div class="tree-action" onclick="uploadFile()">📤 上传文件</div>';
+  html += '<div class="tree-action" onclick="refreshFiles()">🔄 刷新文件</div>';
+  html += '</div>';
   
   el.innerHTML = html;
 }
@@ -833,6 +838,11 @@ async function deleteFolder(id) {
   await sb.from('writer_folders').delete().eq('id', id);
   folders = folders.filter(f => f.id !== id);
   renderFileTree();
+}
+
+async function refreshFiles() {
+  await loadFolders();
+  await loadFiles();
 }
 
 // ===== 文件上传（含断点续传） =====
