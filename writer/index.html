@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>虾虾写作助手 🦐</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f0eb; color: #333; height: 100vh; overflow: hidden; }
@@ -124,7 +125,24 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .preview-header h3 { font-size: 16px; color: #333; }
 .preview-header .close-preview { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; cursor: pointer; font-size: 20px; }
 .preview-header .close-preview:hover { background: #f5f0eb; }
-.preview-body { flex: 1; padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+.preview-body { flex: 1; padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.8; }
+.preview-body h1, .preview-body h2, .preview-body h3, .preview-body h4 { margin: 1em 0 .5em; color: #2e7d32; }
+.preview-body h1 { font-size: 22px; }
+.preview-body h2 { font-size: 19px; }
+.preview-body h3 { font-size: 16px; }
+.preview-body p { margin: .6em 0; }
+.preview-body ul, .preview-body ol { padding-left: 1.5em; margin: .6em 0; }
+.preview-body li { margin: .3em 0; }
+.preview-body blockquote { border-left: 4px solid #4caf50; padding: .3em 1em; margin: .8em 0; background: #f9fdf9; color: #555; border-radius: 0 6px 6px 0; }
+.preview-body code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas','Courier New',monospace; }
+.preview-body pre { background: #2d2d2d; color: #f8f8f2; padding: 14px 18px; border-radius: 8px; overflow-x: auto; margin: .8em 0; }
+.preview-body pre code { background: transparent; color: inherit; padding: 0; font-size: 13px; }
+.preview-body hr { border: none; border-top: 2px solid #e8e5e0; margin: 1.2em 0; }
+.preview-body table { border-collapse: collapse; margin: .8em 0; width: 100%; }
+.preview-body th, .preview-body td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+.preview-body th { background: #e8f5e9; font-weight: 600; }
+.preview-body strong { color: #2e7d32; }
+.preview-body img { max-width: 100%; border-radius: 8px; margin: .8em 0; }
 .preview-actions { padding: 12px 20px; border-top: 1px solid #e8e5e0; display: flex; gap: 8px; justify-content: flex-end; }
 .preview-actions button { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; transition: background .2s; }
 .preview-actions .btn-download { background: #4caf50; color: #fff; }
@@ -772,7 +790,13 @@ function previewFileById(id) {
   if (!file) return;
   previewFile = file;
   document.getElementById('previewTitle').textContent = `📄 ${file.name}`;
-  document.getElementById('previewBody').textContent = file.content || '(空文件)';
+  // 用 marked 渲染 markdown（纯文本也是合法 md，预览更美观）
+  const body = document.getElementById('previewBody');
+  if (typeof marked !== 'undefined' && marked.parse) {
+    body.innerHTML = marked.parse(file.content || '(空文件)');
+  } else {
+    body.innerHTML = (file.content || '(空文件)').replace(/\n/g, '<br>');
+  }
   document.getElementById('filePreview').classList.add('show');
 }
 
