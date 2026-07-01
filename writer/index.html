@@ -132,6 +132,15 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .preview-actions .btn-ai { background: #2196f3; color: #fff; }
 .preview-actions .btn-ai:hover { background: #1976d2; }
 
+/* 引用标签栏 */
+.quote-bar { display: none; padding: 8px 20px; background: #e8f5e9; border-bottom: 1px solid #c8e6c9; align-items: center; gap: 8px; font-size: 13px; }
+.quote-bar.show { display: flex; }
+.quote-bar .q-icon { font-size: 16px; flex-shrink: 0; }
+.quote-bar .q-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2e7d32; }
+.quote-bar .q-text span { font-weight: 600; }
+.quote-bar .q-close { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 14px; color: #888; flex-shrink: 0; }
+.quote-bar .q-close:hover { background: #c8e6c9; color: #333; }
+
 /* 上传进度 */
 #uploadProgress { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; padding: 16px 24px; box-shadow: 0 4px 20px rgba(0,0,0,.15); display: none; z-index: 1100; min-width: 300px; }
 #uploadProgress.show { display: block; }
@@ -196,6 +205,12 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
       <span class="hint">💡 选中文件可续写/扩写</span>
     </div>
     <div class="msg-list" id="msgList"></div>
+    <!-- 引用标签栏 -->
+    <div class="quote-bar" id="quoteBar">
+      <span class="q-icon">📎</span>
+      <span class="q-text">已引用：<span id="quoteFileName"></span></span>
+      <button class="q-close" onclick="removeQuote()">✕</button>
+    </div>
     <div class="chat-input">
       <textarea id="chatInput" placeholder="输入你的想法..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
       <div class="btn-group">
@@ -230,6 +245,7 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
     </div>
     <div class="preview-body" id="previewBody"></div>
     <div class="preview-actions">
+      <button onclick="openFileAiQuote()" class="btn-ai">📎 引用</button>
       <button onclick="openFileAiContinue()" class="btn-ai">✍️ 续写</button>
       <button onclick="openFileAiExpand()" class="btn-ai">🔍 扩写</button>
       <button onclick="downloadPreview()" class="btn-download">⬇️ 下载</button>
@@ -259,6 +275,7 @@ let folders = [];
 let files = [];
 let currentFolderId = null;
 let previewFile = null;
+let quoteFile = null;
 let isSending = false;
 
 // ===== 侧栏折叠 =====
@@ -371,6 +388,13 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || isSending) return;
 
+  // 如果有引用文件，拼接引用内容
+  let finalText = text;
+  if (quoteFile) {
+    finalText = `📎 引用「${quoteFile.name}」的内容如下：\n\n${quoteFile.content.slice(0, 2000)}\n\n——以上是引用内容——\n\n${text}`;
+    removeQuote();
+  }
+
   // 如果没选对话，自动新建
   if (!currentConvId) {
     await newConversation();
@@ -390,17 +414,17 @@ async function sendMessage() {
   }
   const userMsgDiv = document.createElement('div');
   userMsgDiv.className = 'msg user';
-  userMsgDiv.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div>`;
+  userMsgDiv.innerHTML = `<div class="msg-bubble">${escHtml(finalText)}</div>`;
   msgList.appendChild(userMsgDiv);
   msgList.scrollTop = msgList.scrollHeight;
 
   // 保存用户消息到数据库
-  await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: text, axia_handled: false });
+  await sb.from('writer_messages').insert({ conversation_id: currentConvId, role: 'user', content: finalText, axia_handled: false });
 
   // 更新对话标题
   const conv = conversations.find(c => c.id === currentConvId);
   if (conv && conv.title === '新对话') {
-    const newTitle = text.length > 20 ? text.slice(0, 20) + '...' : text;
+    const newTitle = finalText.length > 20 ? finalText.slice(0, 20) + '...' : finalText;
     await sb.from('writer_conversations').update({ title: newTitle }).eq('id', currentConvId);
     conv.title = newTitle;
     document.getElementById('chatTitle').textContent = newTitle;
@@ -794,6 +818,21 @@ function openFileAiExpand() {
   document.getElementById('chatInput').value = `📄 帮我扩写「${previewFile.name}」中的这一段：\n\n${previewFile.content.slice(0, 2000)}`;
   autoResize(document.getElementById('chatInput'));
   sendMessage();
+}
+
+// ===== 引用文件 =====
+function openFileAiQuote() {
+  if (!previewFile) return;
+  quoteFile = previewFile;
+  closePreview();
+  document.getElementById('quoteFileName').textContent = quoteFile.name;
+  document.getElementById('quoteBar').classList.add('show');
+  document.getElementById('chatInput').focus();
+}
+
+function removeQuote() {
+  quoteFile = null;
+  document.getElementById('quoteBar').classList.remove('show');
 }
 
 // ==================== 工具函数 ====================
