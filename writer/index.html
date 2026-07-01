@@ -176,6 +176,14 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .preview-actions .btn-download:hover { background: #388e3c; }
 .preview-actions .btn-ai { background: #2196f3; color: #fff; }
 .preview-actions .btn-ai:hover { background: #1976d2; }
+.preview-actions .btn-edit { background: #ff9800; color: #fff; }
+.preview-actions .btn-edit:hover { background: #f57c00; }
+.preview-actions .btn-save-edit { background: #4caf50; color: #fff; }
+.preview-actions .btn-save-edit:hover { background: #388e3c; }
+.preview-actions .btn-cancel-edit { background: #f5f0eb; color: #555; }
+.preview-actions .btn-cancel-edit:hover { background: #e0ddd8; }
+.preview-edit-textarea { width: 100%; min-height: 300px; padding: 14px; border: 2px solid #4caf50; border-radius: 10px; font-size: 14px; font-family: 'Consolas','Courier New',monospace; line-height: 1.7; resize: vertical; outline: none; }
+.preview-edit-textarea:focus { border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(76,175,80,.15); }
 
 /* 引用标签栏 */
 .quote-bar { display: none; padding: 8px 20px; background: #e8f5e9; border-bottom: 1px solid #c8e6c9; align-items: center; gap: 8px; font-size: 13px; }
@@ -312,7 +320,8 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
       <button class="close-preview" onclick="closePreview()">✕</button>
     </div>
     <div class="preview-body" id="previewBody"></div>
-    <div class="preview-actions">
+    <div class="preview-actions" id="previewActions">
+      <button onclick="editPreviewFile()" class="btn-edit" id="btnEditFile">✏️ 编辑</button>
       <button onclick="openFileAiQuote()" class="btn-ai">📎 引用</button>
       <button onclick="openFileAiContinue()" class="btn-ai">✍️ 续写</button>
       <button onclick="openFileAiExpand()" class="btn-ai">🔍 扩写</button>
@@ -365,6 +374,7 @@ let previewFile = null;
 let quoteFile = null;
 let isSending = false;
 let unreadCounts = {};
+let isEditing = false; // 文件编辑模式
 
 // ===== 侧栏折叠 =====
 function toggleSidebar() {
@@ -961,24 +971,106 @@ function previewFileById(id) {
   const file = files.find(f => f.id === id);
   if (!file) return;
   previewFile = file;
+  isEditing = false;
   document.getElementById('previewTitle').textContent = `📄 ${file.name}`;
   const body = document.getElementById('previewBody');
   const isMd = file.name.toLowerCase().endsWith('.md');
   if (isMd && typeof marked !== 'undefined' && marked.parse) {
-    // .md 文件用 markdown 渲染
     body.className = 'preview-body';
     body.innerHTML = marked.parse(file.content || '(空文件)');
   } else {
-    // .txt 等文本文件保持原样，保留空格和框线字符
     body.className = 'preview-body txt-preview';
     body.textContent = file.content || '(空文件)';
   }
+  // 显示编辑按钮和其他操作按钮
+  document.getElementById('btnEditFile').style.display = '';
+  showPreviewActions(true);
   document.getElementById('filePreview').classList.add('show');
+}
+
+function showPreviewActions(showRegular) {
+  const actions = document.getElementById('previewActions');
+  const btns = actions.querySelectorAll('button');
+  btns.forEach(b => {
+    const isEdit = b.id === 'btnEditFile';
+    const isSaveCancel = b.classList.contains('btn-save-edit') || b.classList.contains('btn-cancel-edit');
+    if (showRegular) {
+      b.style.display = isSaveCancel ? 'none' : '';
+    } else {
+      b.style.display = isEdit ? 'none' : (isSaveCancel ? '' : 'none');
+    }
+  });
+}
+
+function editPreviewFile() {
+  if (!previewFile) return;
+  isEditing = true;
+  const body = document.getElementById('previewBody');
+  body.className = 'preview-body';
+  body.innerHTML = `<textarea class="preview-edit-textarea" id="editTextarea">${escHtml(previewFile.content || '')}</textarea>`;
+  // 隐藏常规按钮，显示保存/取消
+  showPreviewActions(false);
+  // 在操作栏添加保存/取消按钮
+  const actions = document.getElementById('previewActions');
+  // 检查是否已有保存取消按钮
+  if (!document.getElementById('btnSaveEdit')) {
+    const saveBtn = document.createElement('button');
+    saveBtn.id = 'btnSaveEdit';
+    saveBtn.className = 'btn-save-edit';
+    saveBtn.textContent = '💾 保存';
+    saveBtn.onclick = savePreviewEdit;
+    const cancelBtn = document.createElement('button');
+    cancelBtn.id = 'btnCancelEdit';
+    cancelBtn.className = 'btn-cancel-edit';
+    cancelBtn.textContent = '取消';
+    cancelBtn.onclick = cancelPreviewEdit;
+    actions.insertBefore(saveBtn, actions.firstChild);
+    actions.insertBefore(cancelBtn, actions.firstChild);
+  } else {
+    document.getElementById('btnSaveEdit').style.display = '';
+    document.getElementById('btnCancelEdit').style.display = '';
+  }
+  // 标题加个提示
+  document.getElementById('previewTitle').textContent = `✏️ ${previewFile.name}`;
+  // 聚焦输入框
+  setTimeout(() => document.getElementById('editTextarea').focus(), 100);
+}
+
+async function savePreviewEdit() {
+  if (!previewFile) return;
+  const newContent = document.getElementById('editTextarea').value;
+  // 更新数据库
+  const { error } = await sb.from('writer_files').update({
+    content: newContent,
+    size: newContent.length
+  }).eq('id', previewFile.id);
+  if (error) {
+    alert('保存失败，请重试 >_<');
+    return;
+  }
+  // 更新内存
+  previewFile.content = newContent;
+  previewFile.size = newContent.length;
+  // 更新本地文件数组
+  const idx = files.findIndex(f => f.id === previewFile.id);
+  if (idx >= 0) files[idx] = previewFile;
+  // 切回预览模式
+  cancelPreviewEdit();
+  // 刷新文件树（更新大小）
+  renderFileTree();
+}
+
+function cancelPreviewEdit() {
+  isEditing = false;
+  if (!previewFile) return;
+  // 恢复到查看模式
+  previewFileById(previewFile.id);
 }
 
 function closePreview() {
   document.getElementById('filePreview').classList.remove('show');
   previewFile = null;
+  isEditing = false;
 }
 
 function downloadPreview() {
