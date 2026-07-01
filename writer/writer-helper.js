@@ -89,8 +89,10 @@ async function main() {
 
   if (cmd === 'post-message') {
     const convId = process.argv[3];
-    const content = process.argv[4];
+    let content = process.argv[4];
     if (!convId || !content) { console.log('ERROR: missing args'); return; }
+    // 将 shell 传入的 \n 转成真实换行符
+    content = content.replace(/\\n/g, '\n');
     const result = await supabaseRequest('POST', '/rest/v1/writer_messages', {
       conversation_id: parseInt(convId),
       role: 'assistant',
