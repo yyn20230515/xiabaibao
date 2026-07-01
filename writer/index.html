@@ -665,7 +665,32 @@ function pollForReply(convId) {
     });
 }
 
-// ===== 叫醒阿夏 =====
+// ===== 呼叫阿夏（通过写作助手消息触发 Edge Function） =====
+async function callAxia() {
+  const btn = event?.target;
+  if (btn) { btn.textContent = '⏳ 呼叫中...'; btn.style.pointerEvents = 'none'; }
+  try {
+    // 获取当前对话ID（默认为1）
+    const convId = currentConvId || 1;
+    await sb.from('writer_messages').insert({
+      conversation_id: convId,
+      role: 'user',
+      content: '📞 呼叫阿夏！妈妈在写作助手上找阿夏～',
+      axia_handled: false
+    });
+    // 弹出提示
+    const el = document.getElementById('axiaLoading');
+    if (el) {
+      el.innerHTML = '<div class="msg-bubble" style="color:#89d4b6;text-align:center">🦐 呼叫已发送！阿夏马上就来～<br><span style="font-size:12px">等一小会儿刷新就能看到回复了 ✨</span></div>';
+      setTimeout(() => { el.innerHTML = ''; }, 5000);
+    }
+  } catch(e) {
+    alert('呼叫失败: ' + e.message);
+  }
+  if (btn) { btn.textContent = '🦐 呼叫阿夏'; btn.style.pointerEvents = 'auto'; }
+}
+
+// ===== 旧版叫醒阿夏（保留兼容） =====
 async function wakeAxia() {
   const loading = document.getElementById('axiaLoading');
   if (loading) {
@@ -769,6 +794,7 @@ function renderFileTree() {
   html += '<div class="tree-action" onclick="uploadFile()">📤 上传文件</div>';
   html += '<div class="tree-action" onclick="toggleTrash()">🗑️ ' + (showTrashView ? '关闭回收站' : '回收站') + '</div>';
   html += '<div class="tree-action" onclick="refreshFiles()">🔄 刷新文件</div>';
+  html += '<div class="tree-action" onclick="callAxia()" style="background:#fef3e2;color:#b8860b;font-weight:700">🦐 呼叫阿夏</div>';
   html += '</div>';
   
   el.innerHTML = html;
