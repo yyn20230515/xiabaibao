@@ -1098,16 +1098,18 @@ async function deleteFile(id) {
 // ===== AI 续写/扩写 =====
 function openFileAiContinue() {
   if (!previewFile) return;
+  const file = previewFile;
   closePreview();
-  document.getElementById('chatInput').value = `📄 帮我续写「${previewFile.name}」的内容，这是目前的内容：\n\n${previewFile.content.slice(0, 2000)}`;
+  document.getElementById('chatInput').value = `📄 帮我续写「${file.name}」的内容，这是目前的内容：\n\n${file.content.slice(0, 2000)}`;
   autoResize(document.getElementById('chatInput'));
   sendMessage();
 }
 
 function openFileAiExpand() {
   if (!previewFile) return;
+  const file = previewFile;
   closePreview();
-  document.getElementById('chatInput').value = `📄 帮我扩写「${previewFile.name}」中的这一段：\n\n${previewFile.content.slice(0, 2000)}`;
+  document.getElementById('chatInput').value = `📄 帮我扩写「${file.name}」中的这一段：\n\n${file.content.slice(0, 2000)}`;
   autoResize(document.getElementById('chatInput'));
   sendMessage();
 }
