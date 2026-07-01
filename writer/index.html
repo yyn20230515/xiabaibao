@@ -784,14 +784,16 @@ function openFileAiContinue() {
   if (!previewFile) return;
   closePreview();
   document.getElementById('chatInput').value = `📄 帮我续写「${previewFile.name}」的内容，这是目前的内容：\n\n${previewFile.content.slice(0, 2000)}`;
-  document.getElementById('chatInput').focus();
+  autoResize(document.getElementById('chatInput'));
+  sendMessage();
 }
 
 function openFileAiExpand() {
   if (!previewFile) return;
   closePreview();
   document.getElementById('chatInput').value = `📄 帮我扩写「${previewFile.name}」中的这一段：\n\n${previewFile.content.slice(0, 2000)}`;
-  document.getElementById('chatInput').focus();
+  autoResize(document.getElementById('chatInput'));
+  sendMessage();
 }
 
 // ==================== 工具函数 ====================
