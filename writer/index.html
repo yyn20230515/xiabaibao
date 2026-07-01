@@ -165,6 +165,27 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 
 /* 上传进度 */
 #uploadProgress { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; padding: 16px 24px; box-shadow: 0 4px 20px rgba(0,0,0,.15); display: none; z-index: 1100; min-width: 300px; }
+
+/* 新建文件对话框 */
+#newFileOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; display: none; justify-content: center; align-items: center; }
+#newFileOverlay.show { display: flex; }
+.nf-box { background: #fff; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.nf-header { padding: 16px 20px; border-bottom: 1px solid #e8e5e0; display: flex; align-items: center; justify-content: space-between; }
+.nf-header h3 { font-size: 16px; color: #333; }
+.nf-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; cursor: pointer; font-size: 20px; }
+.nf-close:hover { background: #f5f0eb; }
+.nf-body { padding: 20px; flex: 1; overflow-y: auto; }
+.nf-body label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+.nf-body input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #e0ddd8; border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 16px; transition: border .2s; font-family: inherit; }
+.nf-body input[type="text"]:focus { border-color: #4caf50; }
+.nf-body textarea { width: 100%; padding: 10px 14px; border: 1px solid #e0ddd8; border-radius: 10px; font-size: 14px; outline: none; resize: vertical; min-height: 200px; font-family: inherit; line-height: 1.6; transition: border .2s; }
+.nf-body textarea:focus { border-color: #4caf50; }
+.nf-actions { padding: 12px 20px; border-top: 1px solid #e8e5e0; display: flex; gap: 8px; justify-content: flex-end; }
+.nf-actions button { padding: 8px 20px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; transition: background .2s; }
+.nf-actions .btn-save { background: #4caf50; color: #fff; }
+.nf-actions .btn-save:hover { background: #388e3c; }
+.nf-actions .btn-cancel { background: #f5f0eb; color: #555; }
+.nf-actions .btn-cancel:hover { background: #e0ddd8; }
 #uploadProgress.show { display: block; }
 #uploadProgress .up-title { font-size: 13px; color: #555; margin-bottom: 8px; }
 #uploadProgress .up-bar { height: 6px; background: #e8e5e0; border-radius: 3px; overflow: hidden; }
@@ -281,6 +302,26 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
   <div class="up-title" id="upTitle">正在上传...</div>
   <div class="up-bar"><div id="upBarInner" style="width:0%"></div></div>
   <div class="up-text" id="upText">0%</div>
+</div>
+
+<!-- ===== 新建文件对话框 ===== -->
+<div id="newFileOverlay">
+  <div class="nf-box">
+    <div class="nf-header">
+      <h3>📄 新建文件</h3>
+      <button class="nf-close" onclick="closeNewFileDialog()">✕</button>
+    </div>
+    <div class="nf-body">
+      <label>文件名</label>
+      <input type="text" id="nf_name" placeholder="输入文件名（不用加扩展名，自动存为 .txt）" onkeydown="if(event.key==='Enter')document.getElementById('nf_content').focus()">
+      <label>内容</label>
+      <textarea id="nf_content" placeholder="在这里写下文件内容…"></textarea>
+    </div>
+    <div class="nf-actions">
+      <button class="btn-cancel" onclick="closeNewFileDialog()">取消</button>
+      <button class="btn-save" onclick="saveNewFileFromDialog()">保存</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -668,10 +709,21 @@ async function createFolder(name) {
 
 // ===== 新建文件 =====
 function showNewFile() {
-  const name = prompt('输入文件名（不需要扩展名，自动保存为 .txt）：');
-  if (!name || !name.trim()) return;
-  const content = prompt('输入文件内容：');
-  if (content === null) return;
+  document.getElementById('nf_name').value = '';
+  document.getElementById('nf_content').value = '';
+  document.getElementById('newFileOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('nf_name').focus(), 100);
+}
+
+function closeNewFileDialog() {
+  document.getElementById('newFileOverlay').classList.remove('show');
+}
+
+function saveNewFileFromDialog() {
+  const name = document.getElementById('nf_name').value.trim();
+  const content = document.getElementById('nf_content').value;
+  if (!name) { alert('请输入文件名～'); document.getElementById('nf_name').focus(); return; }
+  closeNewFileDialog();
   createNewFile(name.trim() + '.txt', content || '', currentFolderId);
 }
 
