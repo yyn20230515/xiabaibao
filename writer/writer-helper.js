@@ -134,6 +134,26 @@ async function main() {
     return;
   }
 
+  if (cmd === 'read-file') {
+    const fileIdOrName = process.argv[3];
+    if (!fileIdOrName) { console.log('ERROR: missing fileId'); return; }
+    // 先按 ID 查
+    let result = await supabaseRequest('GET',
+      '/rest/v1/writer_files?select=id,name,content&id=eq.' + fileIdOrName + '&limit=1');
+    // 如果 ID 查不到，按文件名查
+    if (!result.body || !result.body.length) {
+      result = await supabaseRequest('GET',
+        '/rest/v1/writer_files?select=id,name,content&name=eq.' + encodeURIComponent(fileIdOrName) + '&limit=1');
+    }
+    if (result.status === 200 && result.body && result.body.length > 0) {
+      const file = result.body[0];
+      console.log(JSON.stringify({ id: file.id, name: file.name, content: file.content }));
+    } else {
+      console.log('EMPTY');
+    }
+    return;
+  }
+
   console.log('ERROR: unknown command ' + cmd);
 }
 

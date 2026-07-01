@@ -388,10 +388,10 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || isSending) return;
 
-  // 如果有引用文件，拼接引用内容
+  // 如果有引用文件，发简短引用标记
   let finalText = text;
   if (quoteFile) {
-    finalText = `📎 引用「${quoteFile.name}」的内容如下：\n\n${quoteFile.content.slice(0, 2000)}\n\n——以上是引用内容——\n\n${text}`;
+    finalText = `📎 引用「${quoteFile.name}」(ID:${quoteFile.id})\n\n${text}`;
     removeQuote();
   }
 
