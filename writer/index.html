@@ -143,6 +143,8 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .preview-body th { background: #e8f5e9; font-weight: 600; }
 .preview-body strong { color: #2e7d32; }
 .preview-body img { max-width: 100%; border-radius: 8px; margin: .8em 0; }
+/* txt 纯文本样式 */
+.preview-body.txt-preview { font-family: 'Consolas','Courier New',monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
 .preview-actions { padding: 12px 20px; border-top: 1px solid #e8e5e0; display: flex; gap: 8px; justify-content: flex-end; }
 .preview-actions button { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; transition: background .2s; }
 .preview-actions .btn-download { background: #4caf50; color: #fff; }
@@ -790,12 +792,16 @@ function previewFileById(id) {
   if (!file) return;
   previewFile = file;
   document.getElementById('previewTitle').textContent = `📄 ${file.name}`;
-  // 用 marked 渲染 markdown（纯文本也是合法 md，预览更美观）
   const body = document.getElementById('previewBody');
-  if (typeof marked !== 'undefined' && marked.parse) {
+  const isMd = file.name.toLowerCase().endsWith('.md');
+  if (isMd && typeof marked !== 'undefined' && marked.parse) {
+    // .md 文件用 markdown 渲染
+    body.className = 'preview-body';
     body.innerHTML = marked.parse(file.content || '(空文件)');
   } else {
-    body.innerHTML = (file.content || '(空文件)').replace(/\n/g, '<br>');
+    // .txt 等文本文件保持原样，保留空格和框线字符
+    body.className = 'preview-body txt-preview';
+    body.textContent = file.content || '(空文件)';
   }
   document.getElementById('filePreview').classList.add('show');
 }
