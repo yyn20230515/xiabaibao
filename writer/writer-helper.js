@@ -176,6 +176,42 @@ async function main() {
     return;
   }
 
+  if (cmd === 'auto-bundle') {
+    // 一键打包：查待处理消息 + 查历史 + 读引用文件，拼成单个 JSON
+    const pendingResult = await supabaseRequest('GET',
+      '/rest/v1/writer_messages?select=id,conversation_id,content,created_at&role=eq.user&axia_handled=eq.false&order=created_at.asc');
+    if (pendingResult.status !== 200 || !Array.isArray(pendingResult.body) || pendingResult.body.length === 0) {
+      console.log('EMPTY');
+      return;
+    }
+    const pendingMsgs = pendingResult.body;
+    const convIds = [...new Set(pendingMsgs.map(m => m.conversation_id))];
+    const bundles = [];
+    for (const msg of pendingMsgs) {
+      const bundle = { msgId: msg.id, convId: msg.conversation_id, userMessage: msg.content };
+      // 查历史（最近 10 条）
+      const histResult = await supabaseRequest('GET',
+        '/rest/v1/writer_messages?select=role,content,created_at&conversation_id=eq.' + msg.conversation_id + '&order=created_at.asc');
+      if (histResult.status === 200 && Array.isArray(histResult.body)) {
+        bundle.history = histResult.body.slice(-10).map(h => ({ role: h.role, content: h.content }));
+      }
+      // 解析引用文件 📎 引用「xxx.txt」(ID:123)
+      const quoteMatch = msg.content.match(/📎\s*引用.*?\(ID:(\d+)\)/);
+      if (quoteMatch) {
+        const fileId = quoteMatch[1];
+        const fileResult = await supabaseRequest('GET',
+          '/rest/v1/writer_files?select=id,name,content&id=eq.' + fileId + '&limit=1');
+        if (fileResult.status === 200 && fileResult.body && fileResult.body.length > 0) {
+          const f = fileResult.body[0];
+          bundle.quoteFile = { id: f.id, name: f.name, content: f.content };
+        }
+      }
+      bundles.push(bundle);
+    }
+    console.log(JSON.stringify({ conversations: convIds, messages: bundles }));
+    return;
+  }
+
   console.log('ERROR: unknown command ' + cmd);
 }
 
