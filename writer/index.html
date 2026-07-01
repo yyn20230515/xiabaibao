@@ -108,6 +108,29 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
 .add-folder { padding: 6px 10px; cursor: pointer; font-size: 13px; color: #4caf50; border-radius: 6px; }
 .add-folder:hover { background: #e8f5e9; }
 
+/* ===== 树状文件管理 ===== */
+.tree-empty { text-align:center; color:#aaa; padding:20px; font-size:13px; }
+.tree-folder { border-bottom:1px solid #f0f0f0; }
+.tree-folder-header { padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #555; display: flex; align-items: center; gap: 6px; transition: background .2s; user-select: none; }
+.tree-folder-header:hover { background: #f5f0eb; }
+.tree-folder-header .arrow { width: 16px; text-align: center; font-size: 10px; color: #aaa; flex-shrink: 0; }
+.tree-folder-header .f-icon { flex-shrink: 0; }
+.tree-folder-header .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-folder-header .fcount { font-size: 11px; color: #aaa; margin-right: 4px; }
+.tree-folder-header .del-folder { font-size: 12px; color: #ccc; cursor: pointer; display: none; padding: 0 4px; }
+.tree-folder-header:hover .del-folder { display: inline; }
+.tree-folder-header .del-folder:hover { color: #e53935; }
+.tree-folder-children { }
+.tree-file { padding: 6px 10px 6px 32px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: background .2s; }
+.tree-file:hover { background: #f5f0eb; }
+.tree-file .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-file .fsize { font-size: 11px; color: #aaa; white-space: nowrap; }
+.tree-file .fops { display: none; gap: 4px; }
+.tree-file:hover .fops { display: flex; }
+.tree-file .fops button { padding: 2px 6px; border-radius: 4px; border: none; background: transparent; cursor: pointer; font-size: 12px; color: #888; }
+.tree-file .fops button:hover { background: #e8e5e0; color: #333; }
+.tree-root-divider { height: 1px; background: #e8e5e0; margin: 4px 0; }
+
 /* 文件列表 */
 .file-list { flex: 1; overflow-y: auto; padding: 8px; }
 .file-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; transition: background .2s; }
@@ -275,8 +298,9 @@ body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
       </div>
     </div>
     <div class="file-panel-toggle-tab" onclick="toggleFilePanel()">◀</div>
-    <div class="folder-list" id="folderList"></div>
-    <div class="file-list" id="fileList"></div>
+    <div class="file-tree" id="fileTree">
+      <div class="tree-empty">正在加载...</div>
+    </div>
   </div>
 </div>
 
@@ -337,7 +361,6 @@ let conversations = [];
 let currentConvId = null;
 let folders = [];
 let files = [];
-let currentFolderId = null;
 let previewFile = null;
 let quoteFile = null;
 let isSending = false;
@@ -366,6 +389,7 @@ function doLogin() {
 async function init() {
   await loadConversations();
   await loadFolders();
+  await loadFiles();
   startGlobalWatch();
   if (conversations.length > 0) {
     selectConversation(conversations[0].id);
@@ -655,41 +679,94 @@ async function wakeAxia() {
 async function loadFolders() {
   const { data } = await sb.from('writer_folders').select('*').order('created_at', { ascending: true });
   folders = data || [];
-  renderFolders();
+  renderFileTree();
 }
 
-async function loadFiles(folderId) {
-  let query = sb.from('writer_files').select('*');
-  if (folderId) {
-    query = query.eq('folder_id', folderId);
-  } else {
-    query = query.is('folder_id', null);
-  }
-  const { data } = await query.order('created_at', { ascending: false });
+async function loadFiles() {
+  const { data } = await sb.from('writer_files').select('*').order('created_at', { ascending: false });
   files = data || [];
-  renderFiles();
+  renderFileTree();
 }
 
-function renderFolders() {
-  const el = document.getElementById('folderList');
-  el.innerHTML = `
-    <div class="folder-item${!currentFolderId ? ' active' : ''}" onclick="selectFolder(null)">
-      📂 全部文件
-    </div>
-    ${folders.map(f => `
-      <div class="folder-item${currentFolderId === f.id ? ' active' : ''}" onclick="selectFolder(${f.id})">
-        📁 ${escHtml(f.name)}
-        <span class="del-folder" onclick="event.stopPropagation();deleteFolder(${f.id})">✕</span>
-      </div>
-    `).join('')}
-    <div class="add-folder" onclick="showNewFolder()">＋ 新建文件夹</div>
-  `;
+// ===== 树状展开状态 =====
+let expandedFolders = new Set();
+
+function toggleFolder(id) {
+  if (expandedFolders.has(id)) {
+    expandedFolders.delete(id);
+  } else {
+    expandedFolders.add(id);
+  }
+  renderFileTree();
 }
 
-async function selectFolder(id) {
-  currentFolderId = id;
-  renderFolders();
-  await loadFiles(id);
+function renderFileTree() {
+  const el = document.getElementById('fileTree');
+  
+  // 根目录文件（无文件夹）
+  const rootFiles = files.filter(f => f.folder_id === null);
+  
+  // 无内容
+  if (rootFiles.length === 0 && folders.length === 0) {
+    el.innerHTML = '<div class="tree-empty">还没有文件 📭</div>';
+    return;
+  }
+  
+  let html = '';
+  
+  // 渲染根目录文件
+  rootFiles.forEach(f => {
+    html += renderTreeFileItem(f);
+  });
+  
+  // 根目录文件和文件夹之间的分隔线
+  if (rootFiles.length > 0 && folders.length > 0) {
+    html += '<div class="tree-root-divider"></div>';
+  }
+  
+  // 渲染文件夹（含内部文件）
+  folders.forEach(folder => {
+    const isExpanded = expandedFolders.has(folder.id);
+    const folderFiles = files.filter(f => f.folder_id === folder.id);
+    
+    html += `<div class="tree-folder">
+      <div class="tree-folder-header" onclick="toggleFolder(${folder.id})">
+        <span class="arrow">${isExpanded ? '▼' : '▶'}</span>
+        <span class="f-icon">📁</span>
+        <span class="fname">${escHtml(folder.name)}</span>
+        <span class="fcount">${folderFiles.length}</span>
+        <span class="del-folder" onclick="event.stopPropagation();deleteFolder(${folder.id})">✕</span>
+      </div>`;
+    
+    if (isExpanded) {
+      html += '<div class="tree-folder-children">';
+      if (folderFiles.length === 0) {
+        html += '<div class="tree-empty" style="padding:8px 10px 8px 32px;font-size:12px">空文件夹</div>';
+      } else {
+        folderFiles.forEach(f => {
+          html += renderTreeFileItem(f);
+        });
+      }
+      html += '</div>';
+    }
+    
+    html += '</div>';
+  });
+  
+  html += '<div class="add-folder" onclick="showNewFolder()">＋ 新建文件夹</div>';
+  
+  el.innerHTML = html;
+}
+
+function renderTreeFileItem(f) {
+  return `<div class="tree-file" onclick="previewFileById(${f.id})">
+    <span>📄</span>
+    <span class="fname">${escHtml(f.name)}</span>
+    <span class="fsize">${formatSize(f.size)}</span>
+    <span class="fops">
+      <button onclick="event.stopPropagation();deleteFile(${f.id})" title="删除">🗑️</button>
+    </span>
+  </div>`;
 }
 
 function showNewFolder() {
@@ -703,7 +780,8 @@ async function createFolder(name) {
   const { data } = await sb.from('writer_folders').insert({ name }).select().single();
   if (data) {
     folders.push(data);
-    selectFolder(data.id);
+    expandedFolders.add(data.id);
+    renderFileTree();
   }
 }
 
@@ -724,7 +802,7 @@ function saveNewFileFromDialog() {
   const content = document.getElementById('nf_content').value;
   if (!name) { alert('请输入文件名～'); document.getElementById('nf_name').focus(); return; }
   closeNewFileDialog();
-  createNewFile(name.trim() + '.txt', content || '', currentFolderId);
+  createNewFile(name.trim() + '.txt', content || '', null);
 }
 
 async function createNewFile(name, content, folderId) {
@@ -736,8 +814,7 @@ async function createNewFile(name, content, folderId) {
   }).select().single();
   if (data) {
     files.unshift(data);
-    renderFiles();
-    loadFolders();
+    renderFileTree();
   }
 }
 
@@ -745,26 +822,7 @@ async function deleteFolder(id) {
   if (!confirm('删除文件夹不会删除其中的文件。确定删除吗？')) return;
   await sb.from('writer_folders').delete().eq('id', id);
   folders = folders.filter(f => f.id !== id);
-  if (currentFolderId === id) selectFolder(null);
-  else renderFolders();
-}
-
-function renderFiles() {
-  const el = document.getElementById('fileList');
-  if (files.length === 0) {
-    el.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">还没有文件 📭</div>';
-    return;
-  }
-  el.innerHTML = files.map(f => `
-    <div class="file-item" onclick="previewFileById(${f.id})">
-      <span>📄</span>
-      <span class="fname">${escHtml(f.name)}</span>
-      <span class="fsize">${formatSize(f.size)}</span>
-      <span class="fops">
-        <button onclick="event.stopPropagation();deleteFile(${f.id})" title="删除">🗑️</button>
-      </span>
-    </div>
-  `).join('');
+  renderFileTree();
 }
 
 // ===== 文件上传（含断点续传） =====
@@ -796,7 +854,7 @@ async function handleFileSelect(event) {
 async function uploadSmallFile(file) {
   const text = await file.text();
   const { data } = await sb.from('writer_files').insert({
-    folder_id: currentFolderId,
+    folder_id: null,
     name: file.name,
     content: text,
     size: text.length
@@ -804,16 +862,13 @@ async function uploadSmallFile(file) {
 
   if (data) {
     files.unshift(data);
-    renderFiles();
-    loadFolders(); // 更新文件夹内文件计数
+    renderFileTree();
   }
 }
 
 async function uploadLargeFile(file) {
   // 检查是否已有同名文件（断点续传）
-  let query = sb.from('writer_files').select('id').eq('name', file.name);
-  if (currentFolderId) query = query.eq('folder_id', currentFolderId);
-  else query = query.is('folder_id', null);
+  const query = sb.from('writer_files').select('id').eq('name', file.name).is('folder_id', null);
   const { data: existing } = await query.limit(1);
 
   let fileId;
@@ -826,7 +881,7 @@ async function uploadLargeFile(file) {
   } else {
     // 新建文件记录
     const { data: newFile } = await sb.from('writer_files').insert({
-      folder_id: currentFolderId,
+      folder_id: null,
       name: file.name,
       content: '',
       size: file.size
@@ -892,7 +947,7 @@ async function uploadChunks(file, fileId, uploadedChunks, isResume) {
 
   // 完成
   setTimeout(() => progressBar.classList.remove('show'), 1000);
-  await loadFiles(currentFolderId);
+  await loadFiles();
 }
 
 function updateProgress(bar, text, current, total) {
@@ -945,7 +1000,7 @@ async function deleteFile(id) {
   await sb.from('writer_files').delete().eq('id', id);
   if (previewFile && previewFile.id === id) closePreview();
   files = files.filter(f => f.id !== id);
-  renderFiles();
+  renderFileTree();
 }
 
 // ===== AI 续写/扩写 =====
