@@ -712,8 +712,8 @@ function toggleFolder(id) {
 function renderFileTree() {
   const el = document.getElementById('fileTree');
   
-  // 根目录文件（无文件夹）
-  const rootFiles = files.filter(f => f.folder_id === null);
+  // 根目录文件（无文件夹，排除软删除的）
+  const rootFiles = files.filter(f => f.folder_id === null && !f.name.startsWith(DEL_PREFIX));
   
   // 无内容
   if (rootFiles.length === 0 && folders.length === 0) {
@@ -736,7 +736,7 @@ function renderFileTree() {
   // 渲染文件夹（含内部文件）
   folders.forEach(folder => {
     const isExpanded = expandedFolders.has(folder.id);
-    const folderFiles = files.filter(f => f.folder_id === folder.id);
+    const folderFiles = files.filter(f => f.folder_id === folder.id && !f.name.startsWith(DEL_PREFIX));
     
     html += `<div class="tree-folder">
       <div class="tree-folder-header" onclick="toggleFolder(${folder.id})">
@@ -767,6 +767,7 @@ function renderFileTree() {
   html += '<div class="tree-action" onclick="showNewFolder()">＋ 新建文件夹</div>';
   html += '<div class="tree-action" onclick="showNewFile()">＋ 新建文件</div>';
   html += '<div class="tree-action" onclick="uploadFile()">📤 上传文件</div>';
+  html += '<div class="tree-action" onclick="toggleTrash()">🗑️ ' + (showTrashView ? '关闭回收站' : '回收站') + '</div>';
   html += '<div class="tree-action" onclick="refreshFiles()">🔄 刷新文件</div>';
   html += '</div>';
   
@@ -977,6 +978,8 @@ function updateProgress(bar, text, current, total) {
 }
 
 // ===== 文件预览/操作 =====
+const DEL_PREFIX = '_DEL_'; // 软删除文件名前缀
+
 function previewFileById(id) {
   const file = files.find(f => f.id === id);
   if (!file) return;
@@ -1097,12 +1100,92 @@ function downloadPreview() {
 }
 
 async function deleteFile(id) {
-  if (!confirm('确定删除这个文件吗？')) return;
+  if (!confirm('确定删除这个文件吗？删除后可以在回收站恢复～')) return;
+  const file = files.find(f => f.id === id);
+  if (!file) return;
+  // 软删除：文件名加 _DEL_ 前缀
+  const newName = DEL_PREFIX + file.name;
+  const { error } = await sb.from('writer_files').update({ name: newName }).eq('id', id);
+  if (error) { alert('删除失败 >_<'); return; }
+  if (previewFile && previewFile.id === id) closePreview();
+  file.name = newName;
+  files = files.filter(f => f.id !== id);
+  files.unshift(file); // 放回数组但会被过滤掉
+  renderFileTree();
+}
+
+// ===== 回收站 =====
+let showTrashView = false;
+
+function toggleTrash() {
+  showTrashView = !showTrashView;
+  if (showTrashView) {
+    renderTrashView();
+  } else {
+    renderFileTree();
+  }
+}
+
+function renderTrashView() {
+  const el = document.getElementById('fileTree');
+  const trashFiles = files.filter(f => f.name.startsWith(DEL_PREFIX));
+  
+  if (trashFiles.length === 0) {
+    el.innerHTML = '<div class="tree-empty">回收站是空的 🗑️</div>';
+    return;
+  }
+  
+  let html = '<div style="padding:8px;font-size:12px;color:#999">回收站里的文件可以恢复或彻底删除</div>';
+  trashFiles.forEach(f => {
+    const origName = f.name.substring(DEL_PREFIX.length);
+    html += `<div class="tree-file" onclick="previewFileById(${f.id})">
+      <span>🗑️</span>
+      <span class="fname" style="color:#999">${escHtml(origName)}</span>
+      <span class="fops">
+        <button onclick="event.stopPropagation();restoreFile(${f.id})" title="恢复" style="color:#4caf50">↩️</button>
+        <button onclick="event.stopPropagation();permanentDeleteFile(${f.id})" title="彻底删除" style="color:#e53935">💣</button>
+      </span>
+    </div>`;
+  });
+  
+  html += '<div class="tree-actions">';
+  html += '<div class="tree-action" onclick="emptyTrash()" style="color:#e53935">🗑️ 清空回收站</div>';
+  html += '<div class="tree-action" onclick="toggleTrash()">◀ 返回文件列表</div>';
+  html += '</div>';
+  
+  el.innerHTML = html;
+}
+
+async function restoreFile(id) {
+  const file = files.find(f => f.id === id);
+  if (!file) return;
+  const origName = file.name.substring(DEL_PREFIX.length);
+  const { error } = await sb.from('writer_files').update({ name: origName }).eq('id', id);
+  if (error) { alert('恢复失败 >_<'); return; }
+  file.name = origName;
+  renderTrashView();
+  renderFileTree();
+}
+
+async function permanentDeleteFile(id) {
+  if (!confirm('确定彻底删除这个文件吗？删除后无法恢复！')) return;
   await sb.from('writer_file_chunks').delete().eq('file_id', id);
   await sb.from('writer_files').delete().eq('id', id);
   if (previewFile && previewFile.id === id) closePreview();
   files = files.filter(f => f.id !== id);
+  renderTrashView();
   renderFileTree();
+}
+
+async function emptyTrash() {
+  if (!confirm('确定清空回收站？所有文件将彻底删除，无法恢复！')) return;
+  const trashFiles = files.filter(f => f.name.startsWith(DEL_PREFIX));
+  for (const f of trashFiles) {
+    await sb.from('writer_file_chunks').delete().eq('file_id', f.id);
+    await sb.from('writer_files').delete().eq('id', f.id);
+  }
+  files = files.filter(f => !f.name.startsWith(DEL_PREFIX));
+  renderTrashView();
 }
 
 // ===== AI 续写/扩写 =====

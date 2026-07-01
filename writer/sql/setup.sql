@@ -49,6 +49,11 @@ CREATE TABLE IF NOT EXISTS writer_file_chunks (
   UNIQUE(file_id, chunk_index)
 );
 
+-- 6. 软删除列（2026-07-01 新增）
+-- 删除文件不再真删，改为在文件名前加 _DEL_ 前缀隐藏
+-- 如果想用数据库列方式，取消注释并执行下面这行：
+-- ALTER TABLE writer_files ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;
+
 -- 启用 RLS
 ALTER TABLE writer_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE writer_messages ENABLE ROW LEVEL SECURITY;
