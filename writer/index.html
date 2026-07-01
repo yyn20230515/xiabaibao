@@ -1161,7 +1161,10 @@ function renderTrashView() {
     return;
   }
   
-  let html = '<div style="padding:8px;font-size:12px;color:#999">回收站里的文件可以恢复或彻底删除</div>';
+  let html = '<div class="tree-actions" style="margin-bottom:8px">';
+  html += '<div class="tree-action" onclick="toggleTrash()" style="background:#e8f5e9;color:#3d7a5a;font-weight:700">◀ 返回文件列表</div>';
+  html += '</div>';
+  html += '<div style="padding:8px;font-size:12px;color:#999'>回收站里的文件可以恢复或彻底删除</div>';
   trashFiles.forEach(f => {
     const origName = f.name.substring(DEL_PREFIX.length);
     html += `<div class="tree-file" onclick="previewFileById(${f.id})">
